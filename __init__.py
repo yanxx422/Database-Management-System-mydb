@@ -8,6 +8,16 @@ def create(arg: str):
 
 def drop(arg: str):
     print('Drop!')  
+    #Remove extra white spaces
+    arg =  " ".join(arg.split())
+    print(arg)
+    
+    #Extract the table name
+    arg = arg[5:].strip
+    
+    
+    
+    print(arg)
 
 
 def insert(arg: str):
