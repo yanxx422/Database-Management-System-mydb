@@ -13,7 +13,7 @@ def drop(arg: str):
     print(arg)
     
     #Extract the table name
-    arg = arg[5:].strip
+    arg = arg[5:].strip()
     
     
     
