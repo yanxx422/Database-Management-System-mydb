@@ -7,7 +7,7 @@ class Engine(Cmd):
     def __init__(self):
         Cmd.__init__(self)
 
-    def do_create(self:str):
+    def do_create(self,arg:str):
         try:
             create(arg):
         except Exception ('Creating Failed.')
