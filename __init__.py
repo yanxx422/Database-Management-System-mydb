@@ -70,11 +70,12 @@ class Engine(Cmd):
         except Exception as e:
             print('Dropping Failed.', e)
             
-     def do_select(self,arg:str):
+    def do_select(self,arg:str):
         try:
             select(arg)
         except Exception as e:
             print('Selecting Failed.', e)
+            
     def do_insert(self,arg:str):
         try:
             insert(arg)
