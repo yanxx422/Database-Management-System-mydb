@@ -26,6 +26,27 @@ def insert(arg: str):
 def delete(arg: str):
     print('delete!')
 
+#"WHERE" is not implemented
+def select(arg:str):
+    arg =  " ".join(arg.split()).lower()
+
+    print(arg)
+
+    # index of the from 
+    from_postion = arg.find('from')
+
+    attributes = arg[:from_postion].strip().split(',')
+
+    #Extract the attributes name, attributes is a list of string 
+    attributes = [x.strip(' ') for x in attributes]
+    print(attributes)
+
+
+    # Extract the table name 
+    table_name = arg[from_postion + len('from'):].strip()
+    print(table_name)    
+    
+  
 def show(arg: str):
     print('show!')
 
@@ -41,24 +62,30 @@ class Engine(Cmd):
         try:
             create(arg)
         except Exception as e:
-            print('Creating Failed.: ', e)
+            print('Creating Failed.', e)
 
     def do_drop(self,arg:str):
         try:
             drop(arg)
         except Exception as e:
-            print('Dropping Failed.: ', e)
+            print('Dropping Failed.', e)
+            
+     def do_select(self,arg:str):
+        try:
+            select(arg)
+        except Exception as e:
+            print('Selecting Failed.', e)
     def do_insert(self,arg:str):
         try:
             insert(arg)
         except Exception as e:
-            print('Inserting Failed.: ', e)
+            print('Inserting Failed.', e)
 
     def do_delete(self,arg:str):
         try:
             delete(arg)
         except Exception as e:
-            print('Deleting Failed.: ', e)
+            print('Deleting Failed.', e)
 
     def do_show(self,arg:str):
         try:
