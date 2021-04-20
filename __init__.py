@@ -100,4 +100,68 @@ class SQLParser:
 
 
 
-        # pass columns, table_name, where and join to some function 
+        # pass columns, table_name, where, join to some function  
+
+
+
+
+    def show(self,arg: str):
+        print('show!')
+
+    def exit(self,arg: str):
+        print('exit!')
+
+
+
+
+
+
+class Runner(Cmd):
+    def __init__(self):
+        Cmd.__init__(self)
+
+    def do_create(self,arg:str):
+        try:
+            SQLParser().create(arg)
+        except Exception as e:
+            print('Creating Failed.', e)
+
+    def do_drop(self,arg:str):
+        try:
+            SQLParser().drop(arg)
+        except Exception as e:
+            print('Dropping Failed.', e)
+
+    def do_select(self,arg:str):
+        try:
+            SQLParser().select(arg)
+        except Exception as e:
+            print('Selecting Failed.', e)
+
+    def do_insert(self,arg:str):
+        try:
+            SQLParser().insert(arg)
+        except Exception as e:
+            print('Inserting Failed.', e)
+
+    def do_delete(self,arg:str):
+        try:
+            SQLParser().delete(arg)
+        except Exception as e:
+            print('Deleting Failed.', e)
+
+    def do_show(self,arg:str):
+        try:
+            SQLParser().show(arg)
+        except Exception as e:
+            print('Showing Failed.: ', e)
+
+    def do_exit(self,arg:str):
+        print("See you.")
+        return True
+
+    def default(self, line: str):
+        print(f"Unknown command: {line.split(' ')[0]}")
+
+if __name__ == "__main__":
+    Runner().cmdloop()
