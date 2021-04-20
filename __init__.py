@@ -5,7 +5,7 @@ from cmd import Cmd
 class SQLParser:
     def __init__(self):
         self = self 
-        
+
 
     def create(self,arg: str):
         print('Create!')
@@ -15,18 +15,18 @@ class SQLParser:
         #Remove extra white spaces
         arg =  " ".join(arg.split())
         print(arg)
-    
+
         #Extract the table name
         arg = arg[5:].strip()
-    
-    
-    
+
+
+
         print(arg)
 
 
     def insert(self,arg: str):
         print('insert!')  
-    
+
     def delete(self,arg: str):
         print('delete!')
 
@@ -34,12 +34,12 @@ class SQLParser:
     def filter_space(self, obj):
         ret = []
         for x in obj:
-            if x.strip() == '' or x.strip() == 'AND':
+            if x.strip() == '' or x.strip() == 'AND' or x.strip() == 'and':
                 continue
             ret.append(x)
 
         return ret
-    
+
     def parse(self,arg: str):
         # arg = 'name , id from students where id = 6'
         if 'where' in arg:
@@ -47,59 +47,56 @@ class SQLParser:
         else:
             arg = arg.split('WHERE')
         # arg = ['name , id from students ', ' id = 6']
-        
+
         base_statement = self.filter_space(arg[0].split(" "))
         # base statement = ['name,id', 'from', 'students']
-        
+
         conditions = None 
-        
+
         if len(arg) == 2:
             conditions = self.filter_space(arg[1].split(" "))           
             # conditions = ['id', '=', '6']
 
 
         return base_statement,conditions 
-    
-        
 
-    
+
+
+
     def select(self,arg:str):
         # base_statement =  ['id,', 'name', 'from', 'students']
         base_statement,conditions = self.parse(arg)
-        
+
         pattern = r'(.*) (FROM|from) (.*)'
-        
+
         comp = re.compile(pattern)
         ret = comp.findall(" ".join(base_statement))
         # ret =  [('id, name', 'from', 'students')]
-        
+
         if ret and len(ret[0]) == 3:
             columns = ret[0][0]
             table_name = ret[0][2]
-            
+
             if columns != '*':
                 columns = [column.strip() for column in columns.split(",")]
                 #Columns =  ['id', 'name']
-                
+
             if conditions:
-                if 'and' in conditions:
-                    conditions.remove('and')
-                if 'AND' in conditions:
-                    conditions.remove('AND')
                 where = []
                 for i in range(0, len(conditions),3):
                     where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': conditions[i+2]})
-                    
-                
-                print(where)
-                        
 
-        
+                print(columns)
+                print(table_name)
+                print(where)
+
+
+
         # pass columns, table_name and where to somewhere 
-        
-        
-     
-  
+
+
+
+
     def show(self,arg: str):
         print('show!')
 
@@ -109,7 +106,7 @@ class SQLParser:
 
 
 
-        
+
 
 class Runner(Cmd):
     def __init__(self):
@@ -126,13 +123,13 @@ class Runner(Cmd):
             SQLParser().drop(arg)
         except Exception as e:
             print('Dropping Failed.', e)
-            
+
     def do_select(self,arg:str):
         try:
             SQLParser().select(arg)
         except Exception as e:
             print('Selecting Failed.', e)
-            
+
     def do_insert(self,arg:str):
         try:
             SQLParser().insert(arg)
