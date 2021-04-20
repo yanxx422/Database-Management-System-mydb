@@ -97,6 +97,7 @@ class SQLParser:
                 print(columns)
                 print(table_name)
                 print(where)
+                print(join)
 
 
 
