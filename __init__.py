@@ -74,8 +74,7 @@ class SQLParser:
                 new_ret = comp.findall((ret)[0][2])
                 
                 join.append({'another_table': new_ret[0][2], 'original_table_column':new_ret[0][6], 'another_table_column':new_ret[0][10], 'operator':new_ret[0][7]})
-                
-                print(join)
+            
                 table_name = new_ret[0][0]
             
             else:
@@ -92,6 +91,7 @@ class SQLParser:
             if conditions:
                 where = []
                 for i in range(0, len(conditions),3):
+                    # To do: Maybe should convert conditions[i+2] to float or int accordingly
                     where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': conditions[i+2]})
 
                 print(columns)
