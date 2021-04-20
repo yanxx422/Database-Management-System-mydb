@@ -56,13 +56,6 @@ class Block:
         self.content = content
         self.last_access_time = time 
 
-    def get_size(obj):
-        return len(pickle.dumps(obj,protocol = pickle.DEFAULT_PROTOCOL))
-
-
-    def get_occupied_size(self):
-        return self.get_size(self.content)
-
     def write_back_to_disk(self):
         record_length = len(self.content)
         df1 = pd.read_csv(r'./data/' + self.tablename + r'.csv', header=None, engine='python')
@@ -166,7 +159,7 @@ class Buffer_Manager:
                 self.block_num -= 1 
 
             self.buffer.append(Block(False, True, tablename, block_ID, [record], time.time()))
-            self.block_data += 1
+            self.block_num += 1
 
         else:
             is_insert = False
@@ -185,7 +178,7 @@ class Buffer_Manager:
                 self.block_num -= 1
                 block_content = read_block_from_disk(tablename,block_ID)
                 self.buffer.append(Block(False, False, tablename, block_ID, block_content, time.time()))
-                self.block_data += 1
+                self.block_num += 1
                 return block_ID *BLOCK_SIZE + offset
     
 
