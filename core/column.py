@@ -135,7 +135,7 @@ class Column(Interface):
     # Convert the object to data
     def serialized(self):
         return Interface.json.dumps({
-            'constraint': [constraint.value for constraint in self.__constraints],
+            'constraint': self.__constraints,
             'type': self.__type.value,
             'values': self.__values,
             'default': self.__default
@@ -145,7 +145,7 @@ class Column(Interface):
     def deserialized(data):
         json_data = Interface.json.loads(data)
 
-        constraints = [ColumnConstraints(constraint) for constraint in json_data['constraint']]
+        constraints = [constraint in json_data['constraint']]
 
         obj = Column(ColumnType(json_data['type']), constraints, defualt = json_data['default'])
 
