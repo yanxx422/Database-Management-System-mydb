@@ -2,7 +2,7 @@ from enum import Enum
 import json
 
 
-#Enum is not working as my expected, maybe a list of strings would be sufficient
+#Enum is not working as expected, maybe a list of strings would be sufficient
 class ColumnConstraints(Enum):
     PRIMARY = 'PRIMARY KEY'
     UNIQUE = 'UNIQUE'
