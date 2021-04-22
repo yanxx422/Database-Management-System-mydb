@@ -1,6 +1,8 @@
 from enum import Enum
 import json
 
+
+#Enum is not working as my expected, maybe a list of strings would be sufficient
 class ColumnConstraints(Enum):
     PRIMARY = 'PRIMARY KEY'
     UNIQUE = 'UNIQUE'
@@ -157,6 +159,18 @@ class Column(Interface):
 
 
 
+def deserialized(data):
+    json_data = json.loads(data)
+            
+    print(json_data)
+    constraints = json_data['constraint']
+    
+    obj = Column(json_data['type'], constraints, default=json_data['default'])
+    
+    for value in json_data['values']:
+        obj.add_data(value)
+    
+    return obj
 
 
 
@@ -202,5 +216,9 @@ if __name__ == '__main__':
     print(name.serialized())
     
     
-    #deserialized(name.serialized())
+    name3 = deserialized(name.serialized())
+    
+    name3.add_data("Dan")
+    
+    print(name3.get_data())
     
