@@ -37,6 +37,20 @@ class Interface():
     def serialized(self):
         raise NotImplementedError
 
+    #Convert the data to the object
+def deserialized(data):
+    json_data = Interface.json.loads(data)
+
+    constraints = json_data['constraint']
+
+    obj = Column(ColumnType(json_data['type']), constraints, defualt = json_data['default'])
+
+    for value in json_data['values']:
+        obj.add(value)
+
+    #Return the json object
+    return obj
+
 
 class Column(Interface):
 
@@ -136,24 +150,11 @@ class Column(Interface):
     def serialized(self):
         return Interface.json.dumps({
             'constraint': self.__constraints,
-            'type': self.__type.value,
+            'type': self.__type,
             'values': self.__values,
             'default': self.__default
         })
 
-    #Convert the data to the object
-    def deserialized(data):
-        json_data = Interface.json.loads(data)
-
-        constraints = [constraint in json_data['constraint']]
-
-        obj = Column(ColumnType(json_data['type']), constraints, defualt = json_data['default'])
-
-        for value in json_data['values']:
-            obj.add(value)
-
-        #Return the json object
-        return obj
 
 
 
@@ -183,9 +184,7 @@ if __name__ == '__main__':
     # This is a type error
     '''
     name.add_data(2)
-
     print(name.get_data())
-
     '''
 
     name.delete_data(2)
@@ -197,8 +196,11 @@ if __name__ == '__main__':
     '''
     name2.add_data(1)
     name2.add_data(1)
-
     print(name2.get_constraints())
     '''
-
-
+    
+    print(name.serialized())
+    
+    
+    #deserialized(name.serialized())
+    
