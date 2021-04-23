@@ -44,7 +44,7 @@ class SQLParser:
             column_specifications  = list(map(str.strip, column_specifications ))
             if column_specifications  == []:
                 raise Exception("No table columns found.")
-            
+            primary_key_column = []
             if column_specifications [-1].startswith('primary key') or column_specifications [-1].startswith('PRIMARY KEY'):
                 
                 lbracket_position = column_specifications [-1].find('(')
@@ -81,13 +81,13 @@ class SQLParser:
             
         
         #CREATE INDEX index_name ON tableName (tableColumn);
-        elif arg[:5] == 'index' or arg[:5] == 'INDEX':
+        elif arg[:5].lower() == 'index':
             
             arg =arg[5:] 
             
-            arg = arg.lsrip()
+            arg = re.sub(' +', ' ', arg)
             
-            on_position = arg.find('on')
+            on_position = arg.lower().find('on')
             
             if on_position == -1:
                 raise Exception(f"'on' is missing when creating index.")
@@ -151,12 +151,12 @@ class SQLParser:
         print('insert!') 
         arg = arg.rstrip(';')
         # Get rid of extra space
-        arg = re.sub(' +', ' ', arg).strip().lower()
+        arg = re.sub(' +', ' ', arg).strip()
         
-        into_positoin = arg.find('into')
+        into_positoin = arg.lower().find('into')
         if into_positoin == -1:
             raise Exception('INSERT INTO syntax is invalid.')
-        values_position = arg.find('values')
+        values_position = arg.lower().find('values')
         if values_position == -1:
             raise Exception("INSERT INTO syntax is invalid, values is missing.")
         
@@ -253,53 +253,55 @@ class SQLParser:
             arg = arg.split('where')
         else:
             arg = arg.split('WHERE')
-        
+            
         # base_statement =  ['id,', 'name', 'from', 'students']
         base_statement = self.filter_space(arg[0].split(" "))
+        
     
-
         pattern = r'(.*) (FROM|from) (.*)'
         comp = re.compile(pattern)
         ret = comp.findall(" ".join(base_statement))
         # ret =  [('id, name', 'from', 'students')]
-
+    
         if ret and len(ret[0]) == 3:
-
+    
             columns = ret[0][0]        
             join = []
-            
+            where = []
+                
             if 'JOIN'in ret[0][2] or 'join'in ret[0][2]:
                 # For now only deal with one join condition, and not including "and" in join condition
                 pattern = r'(.*) (JOIN|join) (.*) (ON|on) (.*)(\.)(.*)(=|>|<|>=|<|<=|<>) (.*)(\.)(.*)'
                 comp  = re.compile(pattern)
                 new_ret = comp.findall((ret)[0][2])
-                
+                    
                 join.append({'another_table': new_ret[0][2], 'original_table_column':new_ret[0][6], 'another_table_column':new_ret[0][10], 'operator':new_ret[0][7]})
-            
-                table_name = new_ret[0][0]
-            
-            else:
                 
+                table_name = new_ret[0][0]
+                
+            else:
+                    
                 table_name = ret[0][2]
-            
+                
             if columns != '*':
                 columns = [column.strip() for column in columns.split(",")]
                 #Columns =  ['id', 'name']
-                
+                    
             if len(arg) == 2:
-                    conditions = self.filter_space(arg[1].split(" "))           
-                    # conditions = ['id', '=', '6']
-            if conditions:
-                where = []
-                for i in range(0, len(conditions),3):
-                    # To do: Maybe should convert conditions[i+2] to float or int accordingly
-                    where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': conditions[i+2]})
-
-                print(columns)
-                print(table_name)
-                print(where)
-                print(join)
-
+                conditions = self.filter_space(arg[1].split(" "))           
+                # conditions = ['id', '=', '6']
+                if conditions:
+                    for i in range(0, len(conditions),3):
+                        # To do: Maybe should convert conditions[i+2] to float or int accordingly
+                        where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': conditions[i+2]})
+    
+        #pass columns,where,table_name,join to somwhere!!
+        # TO DO 
+    
+        print(columns)
+        print(table_name)
+        print(where)            
+        print(join)
 
 
         # pass columns, table_name, where, join to some function  
