@@ -306,8 +306,106 @@ class SQLParser:
 
         # pass columns, table_name, where, join to some function  
 
-
-
+    
+    #DELETE FROM Customers WHERE CustomerName=Alfreds Futterkiste AND ID = 4;
+    #DELETE FROM Customers    
+    
+    # UPDATE Customers SET ContactName='Juan';
+    # UPDATE Customers SET ContactName='Alfred Schmidt', City='Frankfurt' WHERE CustomerID=1;
+    def update(self,arg: str):
+        
+        arg = arg.rstrip(';')
+        arg = re.sub(' +', ' ', arg).strip()
+        
+        columns_to_be_updated = []
+        values_to_be_updated = []
+        where = []
+        
+        location_set = arg.lower().find('set')
+        if location_set == -1:
+            raise Exception("'set' is missing.")
+    
+        location_where = arg.lower().find('where')
+        
+        if location_where == -1:
+    
+            # Customers SET ContactName='Juan';
+            pattern = r'(.*) (SET|set) (.*)'
+            comp = re.compile(pattern)
+            ret = comp.findall("".join(arg))
+          
+            table_name = ret[0][0]
+            
+            column_specifications = ret[0][2]
+            
+            for column_specification in column_specifications.split(','):
+                
+                
+                pattern = r'(.*) (=) (.*)'
+                comp  = re.compile(pattern)
+                new_ret = comp.findall(column_specification)
+                columns_to_be_updated.append(new_ret[0][0])
+                values_to_be_updated.append(new_ret[0][2])
+            
+            print(table_name)
+            print(columns_to_be_updated)
+            print(values_to_be_updated)
+            
+            
+            #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
+                
+        else:
+            table_name = arg[: location_set].strip()
+            
+            if 'AND' in arg:
+                    
+                conditions = arg[location_where + len('where'):].split('AND')
+                
+            else:
+                conditions = arg[location_where + len('where'):].split('and')
+             
+                
+            
+            conditions = list(map(str.strip, conditions))
+            #print(conditions)
+            
+            for condition in conditions:
+    
+                pattern = r'(.*) (=) (.*)'
+                comp  = re.compile(pattern)
+                new_ret = comp.findall(condition)
+                #print(new_ret)
+                where.append({'column_name':new_ret[0][0], 'value':new_ret[0][2]})
+                
+    
+            
+            arg = arg[:location_where]
+            pattern = r'(.*) (SET|set) (.*) '
+            comp = re.compile(pattern)
+            ret = comp.findall("".join(arg))
+     
+            column_specifications = ret[0][2].split(',')
+            
+      
+            
+            for column_specification in column_specifications:
+                
+                pattern = r'(.*) (=) (.*)'
+                comp  = re.compile(pattern)
+                new_ret = comp.findall(column_specification)
+              
+                columns_to_be_updated.append(new_ret[0][0])
+                values_to_be_updated.append(new_ret[0][2])
+            
+            print(table_name)
+            print(where)
+            print(columns_to_be_updated)
+            print(values_to_be_updated)
+            
+            #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
+        
+        
+        
 
     def show(self,arg: str):
         print('show!')
@@ -385,6 +483,18 @@ class Runner(Cmd):
             SQLParser().delete(arg)
         except Exception as e:
             print('Deleting Failed.', e)
+            
+    def do_update(self,arg:str):
+        try:
+            SQLParser().update(arg)
+        except Exception as e:
+            print('Deleting Failed.', e)
+            
+    def do_UPDATE(self,arg:str):
+        try:
+            SQLParser().update(arg)
+        except Exception as e:
+            print('Deleting Failed.', e)     
             
     def do_show(self,arg:str):
         try:
