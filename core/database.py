@@ -112,9 +112,10 @@ class API:
         
         self.path = path 
         
-        self.__load_databases()
-        
-        
+    
+    
+    def create_table(
+   
     
     def create_database(self, database_name):
         

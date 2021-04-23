@@ -74,8 +74,9 @@ class SQLParser:
             print(column_types)
             #Example primary_key_column ['ID']
             print(primary_key_column)
+            print(table_name)
             
-            # Pass column_names, column_types and primary_key_column to somewhere 
+            # Pass column_names, column_types,primary_key_column, table_name to somewhere 
             
             # TO DO .....
             
@@ -488,13 +489,13 @@ class Runner(Cmd):
         try:
             SQLParser().update(arg)
         except Exception as e:
-            print('Deleting Failed.', e)
+            print('Updating Failed.', e)
             
     def do_UPDATE(self,arg:str):
         try:
             SQLParser().update(arg)
         except Exception as e:
-            print('Deleting Failed.', e)     
+            print('Updating Failed.', e)     
             
     def do_show(self,arg:str):
         try:
