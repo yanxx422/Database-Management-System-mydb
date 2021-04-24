@@ -25,8 +25,10 @@ TYPE_MAP = {
     'INT':int,
     'FLOAT': float,
     'VARCHAR': str,
+    'varchar': str,
     'BOOL':bool,
     'bool':bool
+    
 }
 
 class Interface():
@@ -177,7 +179,7 @@ def deserialized(data):
 if __name__ == '__main__':
 
 
-    name = Column("VARCHAR")
+    name = Column("VARCHAR",)
 
     #add_data(self, 3)
 
@@ -222,3 +224,4 @@ if __name__ == '__main__':
     
     print(name3.get_data())
     
+
