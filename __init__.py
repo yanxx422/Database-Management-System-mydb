@@ -4,6 +4,23 @@ from cmd import Cmd
 def find_2nd(string, substring):
     return string.find(substring, string.find(substring) + 1)
 
+def auto_type(value: str):
+    
+    
+    if value[0] == "'" and value[-1] == "'":
+        value = value[1:-1]
+    elif re.match(r'^-?[0-9]+\.+[0-9]+$', value):
+        value = float(value)
+    elif re.match(r'^-?[0-9]+', value):
+        value = int(value)
+    else:
+        pass
+        
+    return value
+
+
+
+
 class SQLParser:
     def __init__(self):
         self = self 
@@ -147,7 +164,7 @@ class SQLParser:
 
     
     #INSERT INTO table_name (column1, column2, column3, ...) VALUES (value1, value2, value3, ...); 
-    #INSERT INTO Customers (    Address, City, PostalCode, Country)     VALUES ('Skagen 21', 'Stavanger', '4006', 'Norway');
+    #INSERT INTO Customers (    Address, City, PostalCode, Country)     VALUES ('Skagen 21', 'Stavanger', 4006, 'Norway');
     def insert(self,arg: str):
         print('insert!') 
         arg = arg.rstrip(';')
@@ -165,6 +182,7 @@ class SQLParser:
         rbracket_values_position = find_2nd(arg,')')
         values = arg[lbracket_values_position + 1: rbracket_values_position].split(',')
         values = list(map(str.strip, values))
+        values = list(map(auto_type, values))
         
 
         table_info = arg[into_positoin + 4:values_position].strip()
@@ -173,7 +191,7 @@ class SQLParser:
         
         columns = table_info[lbracket_columns_position + 1: rbracket_columns_position].split(',')     
         columns = list(map(str.strip, columns))   
-        
+  
         
         table_name = arg[into_positoin+4:lbracket_columns_position+4].strip(' ')
  
@@ -184,7 +202,7 @@ class SQLParser:
         
         
         
-    #DELETE FROM Customers WHERE CustomerName=Alfreds Futterkiste AND ID = 4;
+    #DELETE FROM Customers WHERE CustomerName = Alfreds Futterkiste AND ID = 4;
     #DELETE FROM Customers
     def delete(self,arg: str):
         arg = arg.rstrip(';')
@@ -225,7 +243,7 @@ class SQLParser:
                         break
                 if no_operator:
                     raise Exception(f"no operator found in {condition}")
-                
+                r_op = auto_type(r_op)
                 where.append({'symbol': operator, 'column_name': l_op, 'condition': r_op})
             print(where)
             print(table_name)
@@ -294,7 +312,7 @@ class SQLParser:
                 if conditions:
                     for i in range(0, len(conditions),3):
                         # To do: Maybe should convert conditions[i+2] to float or int accordingly
-                        where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': conditions[i+2]})
+                        where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': auto_type(conditions[i+2])})
     
         #pass columns,where,table_name,join to somwhere!!
         # TO DO 
@@ -312,7 +330,7 @@ class SQLParser:
     #DELETE FROM Customers    
     
     # UPDATE Customers SET ContactName='Juan';
-    # UPDATE Customers SET ContactName='Alfred Schmidt', City='Frankfurt' WHERE CustomerID=1;
+    # UPDATE Customers SET ContactName='Alfred Schmidt', City='Frankfurt' WHERE CustomerID = 1;
     def update(self,arg: str):
         
         arg = arg.rstrip(';')
@@ -346,7 +364,7 @@ class SQLParser:
                 comp  = re.compile(pattern)
                 new_ret = comp.findall(column_specification)
                 columns_to_be_updated.append(new_ret[0][0])
-                values_to_be_updated.append(new_ret[0][2])
+                values_to_be_updated.append(auto_type(new_ret[0][2]))
             
             print(table_name)
             print(columns_to_be_updated)
@@ -376,7 +394,7 @@ class SQLParser:
                 comp  = re.compile(pattern)
                 new_ret = comp.findall(condition)
                 #print(new_ret)
-                where.append({'column_name':new_ret[0][0], 'value':new_ret[0][2]})
+                where.append({'column_name':new_ret[0][0], 'value':auto_type(new_ret[0][2])})
                 
     
             
