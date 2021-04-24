@@ -41,19 +41,7 @@ class Interface():
     def serialized(self):
         raise NotImplementedError
 
-    #Convert the data to the object
-def deserialized(data):
-    json_data = Interface.json.loads(data)
 
-    constraints = json_data['constraint']
-
-    obj = Column(ColumnType(json_data['type']), constraints, defualt = json_data['default'])
-
-    for value in json_data['values']:
-        obj.add(value)
-
-    #Return the json object
-    return obj
 
 
 class Column(Interface):
