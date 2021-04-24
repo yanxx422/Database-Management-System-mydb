@@ -1,50 +1,81 @@
-from table import * 
-from column import *
-
-
+from table import *
 
 def deserialized(obj):
+ 
     data = Interface.json.loads(obj)
-    
-    objt = Database(data['name'])
-    
-    
-    for table_name, table_object in data['tables']:
-        objt.add_table(table_name, Table.deseriazlied(table_object))
-    
-    # Return database object 
-    return objt
 
+ 
+    obj_tmp = Database("mydb")
+
+    for table_name, table_obj in data['tables']:
+        obj_tmp.add_table(table_name, Table.deserialized(table_obj))
+
+    
+    return obj_tmp
 
 class Database(Interface):
     
     def __init__ (self,name):
-        self.__name = name
         self.__table_names = []
         self.__table_objects = {}
+        
+
     
     
+    def create_index(self,indexed_column,index_name,table_name):
+        pass 
     
-    def create_table(self, table_name, **options):
+    
+    def drop_index(index_name):
+        pass 
+    
+    def update_where(table_name,columns_to_be_updated,values_to_be_updated,where):
+        pass
+    def update(table_name,columns_to_be_updated,values_to_be_updated):
+        pass 
+    
+    
+    def create_index(self,indexed_column,index_name,table_name):
+        pass 
+    
+    def delete(self,table_name, where):
+        pass 
+    
+    def insert (self,table_name,columns,values):
+        
+        if table_name not in self.__table_names:
+            raise Exception ('You tried to insert to a table that does not exist. Create it first.')
+        
+        
+        self.__table_objects[table_name].add_columns(columns,values)
+        
+    
+    
+    def create_table(self,table_name, column_names, column_types, primary_key_column):
         
         if table_name in self.__table_objects:
             raise Exception ('This table exists.')
         
         self.__table_names.append(table_name)
         
-        self.__table_objects[table_name] = Table (**options)
-    
-    
+       
+        options = dict(zip(column_names, column_types))
+  
+        table = Table().initialize_columns(options,primary_key_column)
+        
+     
+        self.add_table(table_name, table)
+      
     
     def drop_table(self,table_name):
         if table_name not in self.__table_names:
             raise Exception('Table not exist')
         
-        
         self.__table_names.remove(table_name)
         
         self. __table_objects.pop(table_name, True)
-    
+        
+        
     
     def get_table_name(self, index = None):
         
@@ -55,35 +86,43 @@ class Database(Interface):
         
         return self.__table_names
     
-    def get_table_objects(self,name):
-        
-        #Return None if table doesn't exist
-        return self.__table_objects.get(name, None)
-    
+
     def get_name(self):
         
         return self.__name
     
-    def add_table(self,table_name,table):
-        
-        if table_name not in self.__table_objects:
-            
-            self.__table_names.append(table_name)
-            
-            self.__table_objects[table_name] = table 
     
+    def add_table(self, table_name, table):
+
+        if table_name not in self.__table_names:
+       
+            self.__table_names.append(table_name)
+
+         
+            self.__table_objects[table_name] = table    
+
+    
+    
+    def print_table(self,table_name):
+        print(self.__table_objects)
+        #print(table_name)
+
     
     def serialized(self):
         
-        data = {'name': self.__name, 'tables':[]}
+        data = {'tables': []}
+        
+        #print(data)
         
         for table_name, table_data in self.__table_objects.items():
-            
-            data['tables'].append([table_name. table_data.serialized()])
-            
+
+            pass
+            #data['tables'].append([table_name,table_data.serialized()])
+        
         return Interface.json.dumps(data) 
     
     
+
 
 
 import os 
@@ -100,79 +139,75 @@ def encode_db(content):
     content = content[::-1].encode()
     return base64.encodebytes(content)
 
-class API:
+
+
+
+class Engine:
     
-    def __init__(self,db_name = None, path = 'db.data'):
-        
-        self.__database_objects = {}
-        
-        self.__databae_names = []
-        
-        self.__current_db = None
+    def __init__(self, path = 'db.data'):
         
         self.path = path 
+        self.database_objs = []
         
+        
+        self.load_database()
+        
+        
+        self.db = Database("mydb")
+    
+    def create_table(self,table_name, column_names, column_types, primary_key_column):
+        
+        self.db.create_table(table_name, column_names, column_types, primary_key_column)
+        self.commit_change()
     
     
-    def create_table(
-   
+    def create_index(self,indexed_column,index_name,table_name):
+        self.db.create_index(indexed_column,index_name,table_name)
     
-    def create_database(self, database_name):
-        
-        if database_name in self.__database_objects:
-            raise Exception('Database exists.')
-        
-        self.__database_names.append(database_name)
-        
-        self. __database_objects[database_name] = Database(database_name)
+    def insert(self, table_name,columns,values):
+        #self.db.insert(table_name,columns,values)
+        pass
     
+    def drop_table(self,table_name):
+        self.db.drop_table(table_name)
     
-    def drop_database(self,database_name):
-        
-        if database_name not in self.__database_objects:
-            
-            self.__database_names.remove(database_name)
-            
-            self.__database_objects.pop(database_name, True)
-        
+    def drop_index(self,index_name):
+        self.db.drop_index(index_name)
+    
+    def update(self,table_name,columns_to_be_updated,values_to_be_updated):
+        self.db.update(table_name,columns_to_be_updated,values_to_be_updated)
+    
+    def update_where(self,table_name,columns_to_be_updated,values_to_be_updated,where):
+        self.db.update(table_name,columns_to_be_updated,values_to_be_updated,where)
     
     
-    def select_database(self, database_name):
+    def delete(self,table_name, where):
+        self.db.delete(table_name, where)
         
-        if database_name not in self.__database_objects:
-            
-            raise Exception(' Database Not Exist.')
-        
-        self.__current_db = slef.__database_objects.values[database_name]
     
+    def print_table(self,table_name):
+        self.db.print_table(table_name)
     
     
     def serialized(self):
-        return Interface.json.dumps([
-            database.serialized() for database in self.__database_objects.values()
-        ])
+        return Interface.json.dumps(
+            self.db.serialized()
+        )
     
     
     
     def save_database(self):
         with open(self.path, 'wb') as f :
             content = encode_db(self.serialized())
-            
+            #print(content)
             f.write(content) 
     
     
-    def deseriazlied(self,content):
+    def deserialized(self,content):
         data= Interface.json.loads(content)
         
-        for obj in data:
-            database = Database.deserialized(obj)
-            database_name = database.get_name()
+        self.db = deserialized(data)
             
-            self.__database_names.append(database_name)
-            
-            self.__database_objects[database_name] = database 
-            
-    
     
     def load_database(self):
         
@@ -196,9 +231,42 @@ class API:
     def roll_back(self):
         
         self.load_database()
-        
+
+
+
+
+
+if __name__ == '__main__':
+    
+
+    table_name = "persons"
+    primary_key_column = ['ID']
+    column_types = ['int', 'varchar', 'varchar']
+    column_names = ['ID', 'lastname', 'City']
+    
+    engine = Engine()
+
+    engine.create_table(table_name, column_names, column_types, primary_key_column)
+    
+    #engine.roll_back()
+    #print(engine)
+    
+    table_name = "persons"
+    values = ["1", "Colbert", "New York"]
+    
+    columns = ['ID', 'lastname', 'City']
+    
+    engine.insert(table_name,columns,values)
+    
+    engine.print_table(table_name)
+    
+    #engine.drop_table(table_name)
+    
             
     
+    
+    
+       
     
     
        
