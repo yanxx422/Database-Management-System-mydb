@@ -262,7 +262,8 @@ class SQLParser:
 
 
 
-# select id,name  from students join students2 ON students2.id = students.id where id > 3 and  name = Jerry
+
+
 # select id,name  from students where id > 3 and  name = Jerry
 
 
@@ -293,37 +294,67 @@ class SQLParser:
                 pattern = r'(.*) (JOIN|join) (.*) (ON|on) (.*)(\.)(.*)(=|>|<|>=|<|<=|<>) (.*)(\.)(.*)'
                 comp  = re.compile(pattern)
                 new_ret = comp.findall((ret)[0][2])
-                    
-                join.append({'another_table': new_ret[0][2], 'original_table_column':new_ret[0][6], 'another_table_column':new_ret[0][10], 'operator':new_ret[0][7]})
+                original_table_column = ""
+                another_table_column = ""
                 
                 table_name = new_ret[0][0]
+                another_table = new_ret[0][2]
                 
-            else:
+                if new_ret[0][4] == another_table:
+                    another_table_column = new_ret[0][6]
+                    original_table_column = new_ret[0][10]
+                else:
+                    another_table_column = new_ret[0][10]
+                    original_table_column = new_ret[0][6]
+                join.append({'another_table': another_table, 'original_table_column':original_table_column, 'another_table_column':another_table_column})
+                new_columns = []
+                if columns != '*':
+                    columns = [column.strip() for column in columns.split(",")]
                     
+                    for column in columns:
+                        new_columns.append(str(column).split("."))
+                        
+                    
+                    if len(arg) == 2:
+                        conditions = self.filter_space(arg[1].split(" "))     
+                        if conditions:
+                            for i in range(0, len(conditions),3):
+                                table_column =  conditions[i]
+                                pattern = r'(.*)(\.)(.*)'
+                                comp  = re.compile(pattern)
+                                new_ret = comp.findall(table_column)
+
+                                where.append({'symbol': conditions[i+1], 'table': new_ret[0][0],'column':new_ret[0][2], 'condition': auto_type(conditions[i+2])})   
+                                
+
+                print(new_columns)
+                print(table_name)
+                print(where)            
+                print(join)  
+                # call function
+                
+                
+            else:  
                 table_name = ret[0][2]
                 
-            if columns != '*':
-                columns = [column.strip() for column in columns.split(",")]
-                #Columns =  ['id', 'name']
+                if columns != '*':
+                    columns = [column.strip() for column in columns.split(",")]
                     
-            if len(arg) == 2:
-                conditions = self.filter_space(arg[1].split(" "))           
-                # conditions = ['id', '=', '6']
-                if conditions:
-                    for i in range(0, len(conditions),3):
-                        # To do: Maybe should convert conditions[i+2] to float or int accordingly
-                        where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': auto_type(conditions[i+2])})
+                    if len(arg) == 2:
+                        conditions = self.filter_space(arg[1].split(" "))     
+                        # conditions = ['id', '=', '6']
+                        if conditions:
+                            for i in range(0, len(conditions),3):
+                                where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': auto_type(conditions[i+2])})
     
-        #pass columns,where,table_name,join to somwhere!!
-        # TO DO 
-    
-        print(columns)
-        print(table_name)
-        print(where)            
-        print(join)
+                print(columns)
+                print(table_name)
+                print(where)            
+
+                # call function 
 
 
-        # pass columns, table_name, where, join to some function  
+        
 
     
     #DELETE FROM Customers WHERE CustomerName=Alfreds Futterkiste AND ID = 4;
