@@ -18,10 +18,7 @@ class Database(Interface):
     def __init__ (self,name):
         self.__table_names = []
         self.__table_objects = {}
-        
 
-    
-    
     def create_index(self,indexed_column,index_name,table_name):
         pass 
     
@@ -42,12 +39,13 @@ class Database(Interface):
         pass 
     
     def insert (self,table_name,columns,values):
+        option = dict(zip(columns, values))
         
         if table_name not in self.__table_names:
             raise Exception ('You tried to insert to a table that does not exist. Create it first.')
         
         
-        self.__table_objects[table_name].add_columns(columns,values)
+        self.__table_objects[table_name].add_columns(option)
         
     
     
@@ -58,13 +56,13 @@ class Database(Interface):
         
         self.__table_names.append(table_name)
         
-       
-        options = dict(zip(column_names, column_types))
-  
-        table = Table().initialize_columns(options,primary_key_column)
         
-     
-        self.add_table(table_name, table)
+        options = dict(zip(column_names, column_types))
+        table = Table()
+        table.initialize_columns(options,primary_key_column)        
+        self.__table_objects[table_name] = table
+        
+
       
     
     def drop_table(self,table_name):
@@ -91,21 +89,14 @@ class Database(Interface):
         
         return self.__name
     
-    
-    def add_table(self, table_name, table):
 
-        if table_name not in self.__table_names:
-       
-            self.__table_names.append(table_name)
-
-         
-            self.__table_objects[table_name] = table    
 
     
     
     def print_table(self,table_name):
-        print(self.__table_objects)
-        #print(table_name)
+        self.__table_objects[table_name].print_all_columns()
+        
+      
 
     
     def serialized(self):
@@ -165,7 +156,7 @@ class Engine:
         self.db.create_index(indexed_column,index_name,table_name)
     
     def insert(self, table_name,columns,values):
-        #self.db.insert(table_name,columns,values)
+        self.db.insert(table_name,columns,values)
         pass
     
     def drop_table(self,table_name):
@@ -199,7 +190,8 @@ class Engine:
     def save_database(self):
         with open(self.path, 'wb') as f :
             content = encode_db(self.serialized())
-            #print(content)
+           
+           
             f.write(content) 
     
     
@@ -248,11 +240,10 @@ if __name__ == '__main__':
 
     engine.create_table(table_name, column_names, column_types, primary_key_column)
     
-    #engine.roll_back()
-    #print(engine)
-    
-    table_name = "persons"
-    values = ["1", "Colbert", "New York"]
+    #engine.commit_change()
+
+   
+    values = [1, "Colbert", "New York"]
     
     columns = ['ID', 'lastname', 'City']
     
@@ -261,6 +252,12 @@ if __name__ == '__main__':
     engine.print_table(table_name)
     
     #engine.drop_table(table_name)
+    
+            
+    
+    
+    
+       
     
             
     
