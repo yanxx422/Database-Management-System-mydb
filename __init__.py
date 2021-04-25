@@ -261,9 +261,6 @@ class SQLParser:
 
 
 
-
-
-
 # select id,name  from students where id > 3 and  name = Jerry
 
 
@@ -286,7 +283,6 @@ class SQLParser:
         if ret and len(ret[0]) == 3:
     
             columns = ret[0][0]        
-            join = []
             where = []
                 
             if 'JOIN'in ret[0][2] or 'join'in ret[0][2]:
@@ -294,19 +290,8 @@ class SQLParser:
                 pattern = r'(.*) (JOIN|join) (.*) (ON|on) (.*)(\.)(.*)(=|>|<|>=|<|<=|<>) (.*)(\.)(.*)'
                 comp  = re.compile(pattern)
                 new_ret = comp.findall((ret)[0][2])
-                original_table_column = ""
-                another_table_column = ""
-                
                 table_name = new_ret[0][0]
-                another_table = new_ret[0][2]
-                
-                if new_ret[0][4] == another_table:
-                    another_table_column = new_ret[0][6]
-                    original_table_column = new_ret[0][10]
-                else:
-                    another_table_column = new_ret[0][10]
-                    original_table_column = new_ret[0][6]
-                join.append({'another_table': another_table, 'original_table_column':original_table_column, 'another_table_column':another_table_column})
+
                 new_columns = []
                 if columns != '*':
                     columns = [column.strip() for column in columns.split(",")]
@@ -326,13 +311,11 @@ class SQLParser:
 
                                 where.append({'symbol': conditions[i+1], 'table': new_ret[0][0],'column':new_ret[0][2], 'condition': auto_type(conditions[i+2])})   
                                 
-
+                # call function
                 print(new_columns)
                 print(table_name)
                 print(where)            
-                print(join)  
-                # call function
-                
+
                 
             else:  
                 table_name = ret[0][2]
@@ -350,15 +333,12 @@ class SQLParser:
                 print(columns)
                 print(table_name)
                 print(where)            
-
+              
+                
+                
                 # call function 
 
 
-        
-
-    
-    #DELETE FROM Customers WHERE CustomerName=Alfreds Futterkiste AND ID = 4;
-    #DELETE FROM Customers    
     
     # UPDATE Customers SET ContactName='Juan';
     # UPDATE Customers SET ContactName='Alfred Schmidt', City='Frankfurt' WHERE CustomerID = 1;
@@ -426,17 +406,13 @@ class SQLParser:
                 new_ret = comp.findall(condition)
                 #print(new_ret)
                 where.append({'column_name':new_ret[0][0], 'value':auto_type(new_ret[0][2])})
-                
     
-            
             arg = arg[:location_where]
             pattern = r'(.*) (SET|set) (.*) '
             comp = re.compile(pattern)
             ret = comp.findall("".join(arg))
      
             column_specifications = ret[0][2].split(',')
-            
-      
             
             for column_specification in column_specifications:
                 
