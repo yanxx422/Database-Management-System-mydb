@@ -2,7 +2,7 @@ create table sales_rep (ID int , name varchar, age int, region_id int, PRIMARY K
 insert into sales_rep (ID,name,age,region_id) values (1,'Jimmy',21,22209);
 insert into sales_rep (ID,name,age,region_id) values (2,'Jenny',22, 55414);
 insert into sales_rep (ID,name,age,region_id) values (3,'Mike',20, 10293);
-select * from sales_rep values;
+select * from sales_rep;
 select * from sales_rep values where age >= 20 and region_id = 10293;
 delete from sales_rep  where age = 20;
 delete from sales_rep ;
