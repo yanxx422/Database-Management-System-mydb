@@ -25,11 +25,8 @@ class SQLParser:
     def __init__(self):
         self = self 
 
-
    #create table persons( ID int, lastname VARCHAR, City VARCHAR, PRIMARY KEY (ID));
     def create(self,arg: str):
-        print('Create!')
-        
         arg =arg.strip()
         
         if arg[-1] == '(': 
@@ -260,7 +257,6 @@ class SQLParser:
         return ret
 
 
-
 # select id,name  from students where id > 3 and  name = Jerry
 
 
@@ -333,10 +329,7 @@ class SQLParser:
                 print(columns)
                 print(table_name)
                 print(where)            
-              
-                
-                
-                # call function 
+                #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
 
 
     
@@ -362,10 +355,8 @@ class SQLParser:
             # Customers SET ContactName='Juan';
             pattern = r'(.*) (SET|set) (.*)'
             comp = re.compile(pattern)
-            ret = comp.findall("".join(arg))
-          
-            table_name = ret[0][0]
-            
+            ret = comp.findall("".join(arg))      
+            table_name = ret[0][0]         
             column_specifications = ret[0][2]
             
             for column_specification in column_specifications.split(','):
@@ -430,21 +421,31 @@ class SQLParser:
             
             #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
         
-        
-        
-
-    def show(self,arg: str):
-        print('show!')
-
+ 
     def exit(self,arg: str):
         print('exit!')
 
 
 
-
-
+action_map = {
+            'create': SQLParser().create,
+            'CREATE':SQLParser().create,
+            'drop': SQLParser().drop,
+            'DROP': SQLParser().drop,
+            'select': SQLParser().select,
+            'SELECT': SQLParser().select,
+            'insert': SQLParser().insert,
+            'INSERT': SQLParser().insert,
+            'delete': SQLParser().delete,
+            'DELETE': SQLParser().delete,
+            'UPDATE': SQLParser().update,
+            'update': SQLParser().update
+        }
 
 class Runner(Cmd):
+    
+    prompt = "MiniSQL> "
+    
     def __init__(self):
         Cmd.__init__(self)
 
@@ -520,13 +521,28 @@ class Runner(Cmd):
         try:
             SQLParser().update(arg)
         except Exception as e:
-            print('Updating Failed.', e)     
+            print('Updating Failed.', e)    
             
-    def do_show(self,arg:str):
+    def do_exec(self, arg: str): 
+
+        i = 1
         try:
-            SQLParser().show(arg)
+            f = open(arg.strip(';').strip(), 'r')
+            while 1:
+                line = f.readline().strip()
+                if line == '':
+                    break
+                if line[0] == '#':
+                    i += 1
+                    continue
+                action = line[:line.find(' ')]
+                arg = line[line.find(' '):]
+                action_map[action](arg)
+                i += 1
         except Exception as e:
-            print('Showing Failed.: ', e)
+            print(f" An exception occurred at line {i}:")
+            print(e)       
+        
 
     def do_exit(self,arg:str):
         print("See you.")
