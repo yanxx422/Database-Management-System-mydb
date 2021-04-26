@@ -444,7 +444,7 @@ action_map = {
 
 class Runner(Cmd):
     
-    prompt = "MiniSQL> "
+    prompt = "Mydb> "
     
     def __init__(self):
         Cmd.__init__(self)
