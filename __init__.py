@@ -163,7 +163,6 @@ class SQLParser:
     #INSERT INTO table_name (column1, column2, column3, ...) VALUES (value1, value2, value3, ...); 
     #INSERT INTO Customers (    Address, City, PostalCode, Country)     VALUES ('Skagen 21', 'Stavanger', 4006, 'Norway');
     def insert(self,arg: str):
-        print('insert!') 
         arg = arg.rstrip(';')
         # Get rid of extra space
         arg = re.sub(' +', ' ', arg).strip()
