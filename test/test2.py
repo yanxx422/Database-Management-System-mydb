@@ -43,9 +43,100 @@ class Table:
         # set up a list of indices
         self.indices = []
 
+        # set up a size variable, relevant for joins and other efficiency optimizations.
+        self.size = 0
+
     @classmethod
-    def create_from_join(cls, left_table, right_table):
-        pass
+    def create_from_join(cls, left_table, right_table, leftColumnOfJoin, rightColumnOfJoin):
+
+
+        # Check if the columns to be joined on match have the same data type
+        # get left table's column object of join
+        left_table_join_column = None
+        right_table_join_column = None
+
+        for x in left_table.columns:
+            if x.attribute_name == leftColumnOfJoin:
+                left_table_join_column = x
+
+        for x in right_table.columns:
+            if x.attribute_name == leftColumnOfJoin:
+                right_table_join_column = x
+
+        if left_table_join_column is None:
+            raise Exception("Error, cannot join on non-existent left table column. Check column name.")
+        if right_table_join_column is None:
+            raise Exception("Error, cannot join on non-existent right table column. Check column name.")
+
+        if left_table_join_column.data_type is not right_table_join_column.data_type:
+            raise Exception("Error, cannot join columns of different type.")
+
+        # Determine smaller and larger table
+        smaller_table = left_table
+        smaller_column_of_join = leftColumnOfJoin
+        larger_table = right_table
+        larger_column_of_join = rightColumnOfJoin
+
+        if left_table.size > right_table.size:
+            smaller_table = right_table
+            smaller_column_of_join = rightColumnOfJoin
+            larger_table = left_table
+            larger_column_of_join = leftColumnOfJoin
+
+        # confirm existence or create index on join column of larger table
+        if larger_column_of_join not in [index.attribute_name for index in larger_table.indices]:
+            larger_table.create_index(larger_column_of_join)
+
+        # create the column mapping of the joined table
+        mapping = {}
+        for key in smaller_table.column_mapping:
+            mapping[smaller_table.table_name + "." + key] = smaller_table.column_mapping[key]
+
+        for key in larger_table.column_mapping:
+            if key is not larger_column_of_join:
+                mapping[larger_table.table_name + "." + key] = larger_table.column_mapping[key]
+
+        # print("MAPPING", mapping)
+
+        # modifying primary keys in primary keys list to add table_name of smaller table
+        joined_primary_keys = []
+        for primary in smaller_table.primary_key:
+            joined_primary_keys.append(smaller_table.table_name + "." + primary)
+
+        # instantiate the table object
+        joined_table = cls("joined_table", mapping, joined_primary_keys)
+
+        # get position of joining column in both tables
+        smaller_table_column_index = [column.attribute_name for column in smaller_table.columns].index(smaller_column_of_join)
+        larger_table_column_index = [column.attribute_name for column in larger_table.columns].index(larger_column_of_join)
+
+        # get position of joining column index in larger table
+        larger_table_index_position = [index.attribute_name for index in larger_table.indices].index(larger_column_of_join)
+
+        # load the table with the joined records
+        for record in smaller_table._select():
+            # gather the records in the larger table that match, via indexing
+            other_record_list_id = larger_table.indices[larger_table_index_position].data[record[smaller_table_column_index]]
+            other_records_list_tuples = []
+            for id in other_record_list_id:
+                other_records_list_tuples.append(larger_table.data[id])
+
+            for other_record in other_records_list_tuples:
+
+                joined_record = list(record)
+
+                for i in range(0, len(other_record)):
+                    if i is not larger_table_column_index:
+                        joined_record.append(other_record[i])
+
+                joined_record = tuple(joined_record)
+
+                joined_table.add_record(joined_record)
+
+
+        return joined_table
+
+
         # joinedTable = cls(table_name, column_mapping)
         #
         # return joinedTable
@@ -81,7 +172,9 @@ class Table:
 
         # add the record to the hash map self.data
         self.data[hash] = record
-        print(hash)
+        # print(hash)
+
+        self.size += 1
 
     def remove_record(self, record):
         # check if record is present
@@ -102,6 +195,8 @@ class Table:
             del self.primary_key_hash_map[hash2]
         else:
             raise Exception("Cannot delete non existent record.")
+
+        self.size -= 1
 
     def update_record(self, columns_to_be_updated, values_to_be_updated, where=None):
 
@@ -210,7 +305,18 @@ class Table:
                         except:
                             pass
 
-
+    # def _select_sort(self, order_by):
+    #
+    #     if len(order_by) > 1:
+    #         newIndex = self.create_index_from_generator(self._select_sort(order_by[1:]))
+    #         for key in newIndex:
+    #             yield self.data[newIndex[key]]
+    #     else:
+    #
+    #         index_pos = [x.attribute_name for x in self.indices].index(order_by[0])
+    #
+    #         for key in self.indices[index_pos]:
+    #             yield
 
 class Column:
 
@@ -245,45 +351,62 @@ emp1 = ["0001", "Brandon", 25]
 emp2 = ("0002", "Michael", 40)
 emp3 = ("0003", "Matthew", 25)
 
-
-t = Table("Employees", column_mapping, ["ID"])
-
-# print(t.tuple_hasher(emp1))
-# print(t.tuple_hasher(emp1))
-
-
-# t.add_record(emp1)
-# t.add_record(emp2)
-# t.add_record(emp3)
+#-------------------------------------------------------
+# t = Table("Employees", column_mapping, ["ID"])
 #
-# for x in t._select():
-#     print(x)
+# # print(t.tuple_hasher(emp1))
+# # print(t.tuple_hasher(emp1))
+#
+#
+# # t.add_record(emp1)
+# # t.add_record(emp2)
+# # t.add_record(emp3)
 # #
-# t.remove_record(emp1)
+# # for x in t._select():
+# #     print(x)
+# # #
+# # t.remove_record(emp1)
+# #
+# # for x in t._select():
+# #     print(x)
 #
+#
+#
+# where = [{"symbol": "<", "column": "Age", "condition": 60}]
+#
+# # for x in t._select(where):
+# #     print(x)
+#
+#
+# t.update_record(["Age"], [20], where)
+#
+# #
+# # where = [{"symbol": "==", "column": "Age", "condition": 30}]
+# #
+# # for x in t._select(where):
+# #     print(x)
+# #
 # for x in t._select():
 #     print(x)
-
-
-
-where = [{"symbol": "<", "column": "Age", "condition": 60}]
-
-# for x in t._select(where):
-#     print(x)
-
-
-t.update_record(["Age"], [20], where)
-
 #
-# where = [{"symbol": "==", "column": "Age", "condition": 30}]
-#
-# for x in t._select(where):
-#     print(x)
-#
-for x in t._select():
+# print(t.size)
+
+# s = Table.create_from_join(6, 7)
+#-------------------------------------------------------
+
+left = Table("Employees1", column_mapping, ["ID"])
+right = Table("Employees2", column_mapping, ["ID"])
+
+# left.add_record(emp3)
+# right.add_record(emp3)
+
+for x in left._select():
     print(x)
 
-s = Table.create_from_join(6, 7)
+for x in right._select():
+    print(x)
 
+joined = Table.create_from_join(left, right, "ID", "ID")
 
-
+for x in joined._select():
+    print(x)

@@ -8,21 +8,21 @@ import uuid
 # newTree.insert("the", "hello")
 
 # -------------------------------------
-tuple = ("0001", "Brandon", 25)
-
-hash = hashlib.md5()
-
-for element in tuple:
-    hash.update(str(element).encode())
-
-# print(type(hash.digest().decode("utf-8")))
-
-data_key = str(uuid.UUID(bytes=hash.digest()))
-print(data_key)
-# data_key = uuid.UUID(bytes=hash.digest())
-data_key = hash.hexdigest()
-
-print(data_key)
+# tuple = ("0001", "Brandon", 25)
+#
+# hash = hashlib.md5()
+#
+# for element in tuple:
+#     hash.update(str(element).encode())
+#
+# # print(type(hash.digest().decode("utf-8")))
+#
+# data_key = str(uuid.UUID(bytes=hash.digest()))
+# print(data_key)
+# # data_key = uuid.UUID(bytes=hash.digest())
+# data_key = hash.hexdigest()
+#
+# print(data_key)
 # -------------------------------------
 #
 # import shelve
@@ -49,7 +49,11 @@ print(data_key)
 #
 
 
+#
+# class Runner:
+#
+#     def __init__(self):
 
-class Runner:
 
-    def __init__(self):
+if int is int:
+    print("cool")
