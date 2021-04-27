@@ -25,6 +25,7 @@ Column_mapping
 import shelve
 from blist import sorteddict
 import hashlib
+import os
 
 class Table:
 
@@ -52,7 +53,7 @@ class Table:
 
         # check that primary key columns are actually columns of the table
         if not any(elem in primary_key for elem in column_mapping.keys()):
-            raise Exception("primary_key '%s' does not exist." % primary_key_column)
+            raise Exception("primary_key '%s' does not exist." % primary_key)
 
         # # check if table name exists
         # for key, value in tables.items():
@@ -172,6 +173,13 @@ class Table:
         #
         # return joinedTable
 
+    def drop_table(self):
+        self.data.close()
+        self.primary_key_hash_map.close()
+
+        os.remove(self.table_name + ".db")
+        os.remove(self.table_name + "_primary_key.db")
+
     def add_record(self, record):
         # --- check if record is legal
         # --------- check if lengths match
@@ -229,6 +237,10 @@ class Table:
 
         self.size -= 1
 
+    def remove_where(self, where):
+        for x in self._select_filter(where):
+            self.remove_record(x)
+
     def update_record(self, columns_to_be_updated, values_to_be_updated, where=None):
 
         # column_names = [x.attribute_name for x in self.columns]
@@ -237,7 +249,7 @@ class Table:
         for column in columns_to_be_updated:
             indices.append([x.attribute_name for x in self.columns].index(column))
 
-        for record in self._select(where):
+        for record in self._select_filter(where):
 
             record = list(record)
             # print(record)
@@ -266,6 +278,14 @@ class Table:
         except:
             print("ERROR: Attribute does not exist. Cannot create index.")
 
+    def drop_index(self, column_name):
+
+        try:
+            index = [x.attribute_name for x in self.indices].index(column_name)
+            del self.indices[index]
+        except:
+            raise Exception("Cannot drop non existent index.")
+
     # def select(self, columns, where=None, order_by=None, group_by=None):
     #     indices = []
     #
@@ -287,111 +307,359 @@ class Table:
     #         yield toPrint
 
 
-    def _select(self, where=None, order_by=None):
-
-        # if there are no such conditions, simply yield one record at a time
-        if where is None and order_by is None:
-            for key in self.data:
-                yield self.data[key]
-            return
-        # else there is a condition. An index is needed. Determine if all the indices needed are present
-        # check indices for where clause:
-        for clause in where:
-            if clause["column"] not in [y.attribute_name for y in self.indices]:
-                self.create_index(clause["column"])
-        # check indices for order_by clause:
-
-
-        if order_by is None:
-            first = 0
-            for clause in where:
-                if first == 0:
-                    operator = clause["symbol"]
-                    column = clause["column"]
-                    condition = str(clause["condition"])
-
-                    indices_index = [z.attribute_name for z in self.indices].index(column)
-                    if operator == "==":
-                        try:
-                            for key in self.indices[indices_index].data:
-                                if key == condition:
-                                    for x in self.indices[indices_index].data[key]:
-                                        yield self.data[x]
-                        except:
-                            pass
-                    elif operator == "<":
-                        try:
-                            for key in self.indices[indices_index].data:
-                                if key < condition:
-                                    for x in self.indices[indices_index].data[key]:
-                                        yield self.data[x]
-                        except:
-                            pass
-                    elif operator == ">":
-                        try:
-                            for key in self.indices[indices_index].data:
-                                if key > condition:
-                                    for x in self.indices[indices_index].data[key]:
-                                        yield self.data[x]
-                        except:
-                            pass
-
-
-    # def _filter(self, record, where):
-    #
-    #     operator = where["symbol"]
-    #     column = where["column"]
-    #     condition = str(where["condition"])
-    #
-    #     # get index of column to check
-    #     column_index = [x.attribute_name for x in self.columns].index(column)
-    #
-    #     if operator == "==":
-    #         if record[column_index] == condition:
-    #             return True
-    #         else:
-    #             return False
-    #     elif operator == "<":
-    #         if record[column_index] < condition:
-    #             return True
-    #         else:
-    #             return False
-    #     elif operator == ">":
-    #         if record[column_index] > condition:
-    #             return True
-    #         else:
-    #             return False
-
-    # def _select_filter(self, where=None, order_by=None):
+    # def _select(self, where=None, order_by=None):
     #
     #     # if there are no such conditions, simply yield one record at a time
     #     if where is None and order_by is None:
     #         for key in self.data:
     #             yield self.data[key]
     #         return
+    #     # else there is a condition. An index is needed. Determine if all the indices needed are present
+    #     # check indices for where clause:
+    #     for clause in where:
+    #         if clause["column"] not in [y.attribute_name for y in self.indices]:
+    #             self.create_index(clause["column"])
+    #     # check indices for order_by clause:
     #
     #
     #     if order_by is None:
-    #         # if there is more than one where, the outer wheres will be processed linearly.
-    #         # it does not make sense to make this unique combination of wheres into an index
-    #         if len(where) > 1:
-    #             for x in self._select_filter(where[1:]):
-    #                 if self._filter(x, where[0]):
-    #                     yield x
+    #         first = 0
+    #         for clause in where:
+    #             if first == 0:
+    #                 operator = clause["symbol"]
+    #                 column = clause["column"]
+    #                 condition = str(clause["condition"])
     #
-    #
-    # def _select_sort(self, order_by):
-    #
-    #     if len(order_by) > 1:
-    #         newIndex = self.create_index_from_generator(self._select_sort(order_by[1:]))
-    #         for key in newIndex:
-    #             yield self.data[newIndex[key]]
-    #     else:
-    #
-    #         index_pos = [x.attribute_name for x in self.indices].index(order_by[0])
-    #
-    #         for key in self.indices[index_pos]:
-    #             yield self.data[self.indices[index_pos][key]]
+    #                 indices_index = [z.attribute_name for z in self.indices].index(column)
+    #                 if operator == "==":
+    #                     try:
+    #                         for key in self.indices[indices_index].data:
+    #                             if key == condition:
+    #                                 for x in self.indices[indices_index].data[key]:
+    #                                     yield self.data[x]
+    #                     except:
+    #                         pass
+    #                 elif operator == "<":
+    #                     try:
+    #                         for key in self.indices[indices_index].data:
+    #                             if key < condition:
+    #                                 for x in self.indices[indices_index].data[key]:
+    #                                     yield self.data[x]
+    #                     except:
+    #                         pass
+    #                 elif operator == ">":
+    #                     try:
+    #                         for key in self.indices[indices_index].data:
+    #                             if key > condition:
+    #                                 for x in self.indices[indices_index].data[key]:
+    #                                     yield self.data[x]
+    #                     except:
+    #                         pass
+
+    def aggregation(self, operation_type, record_data, current):
+        if operation_type == "sum":
+            if current == "a":
+                return record_data
+            else:
+                return current + record_data
+        elif operation_type == "avg":
+            if current == "a":
+                return record_data
+            else:
+                return current + record_data
+        elif operation_type == "count":
+            if current == "a":
+                return 1
+            else:
+                return current + 1
+        elif operation_type == "min":
+            if current == "a":
+                return record_data
+            if record_data < current:
+                return record_data
+            else:
+                return current
+        elif operation_type == "max":
+            if current == "a":
+                return record_data
+            if record_data > current:
+                return record_data
+            else:
+                return current
+
+
+    def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc"):
+
+        # this is the function were the code lost its structure completely
+        if aggregates is not None:
+
+            order_by_cols = []
+            for ag in aggregates:
+                print(ag[0])
+                order_by_cols.append(ag[0])
+
+            print(order_by_cols)
+            # order_by = order_by_cols
+
+            toPrint = []
+            column_indices = []
+            # get column indices
+            for column in columns:
+                column_indices.append([x.attribute_name for x in self.columns].index(column))
+
+            # get mapping from index to column
+            index_to_columns = {}
+            column_to_index = {}
+            i = 0
+            for index in column_indices:
+                index_to_columns[index] = columns[i]
+                column_to_index[columns[i]] = index
+                i += 1
+
+            # get mapping from index to aggregate function
+            index_to_aggregate_function = {}
+            for aggregate in aggregates:
+                index_to_aggregate_function[column_to_index[aggregate[0]]] = aggregate[1]
+
+            list_of_results = []
+            # get mapping from index to integer
+            index_to_var = {}
+            for index in index_to_aggregate_function:
+                index_to_var[index] = "a"
+
+            if group_by is not None:
+                change = False
+
+                # get group_by indices
+                group_by_column_indices = []
+                for column in group_by:
+                    group_by_column_indices.append([x.attribute_name for x in self.columns].index(column))
+
+                # set up mapping from group by indices to state values
+                group_by_index_mapping = {}
+                for index in group_by_column_indices:
+                    group_by_index_mapping[index] = 0
+
+                hashPrior = self.tuple_hasher(group_by_index_mapping.values())
+                hashCurrent = self.tuple_hasher(group_by_index_mapping.values())
+
+                for record in self._select_filter(where, order_by_cols, direction):
+                    for index in index_to_var:
+                        index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
+
+                    for key in group_by_index_mapping:
+                        group_by_index_mapping[key] = record[key]
+
+                    hashPrior = hashCurrent
+                    hashCurrent = self.tuple_hasher(group_by_index_mapping.values())
+
+                    if hashPrior != hashCurrent:
+                        change = True
+
+                    if group_by is None:
+                        change = False
+
+                    if change is True:
+                        list_of_results.append(index_to_var)
+                        index_to_var = {}
+                        for index in index_to_aggregate_function:
+                            index_to_var[index] = "a"
+                        change = False
+            else:
+                for record in self._select_filter(where, order_by, direction):
+                    for index in index_to_var:
+                        index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
+                list_of_results.append(index_to_var)
+            # # get mapping from index to integer
+                # index_to_var = {}
+                # for index in index_to_aggregate_function:
+                #     index_to_var[index] = "a"
+                #
+                #
+                # for record in self._select_filter(where, order_by, direction):
+                #     for index in index_to_var:
+                #         index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
+
+            names = []
+            for name in aggregates:
+                names.append(name[1] + "(" + name[0] + ")")
+            print(names)
+            for result in list_of_results:
+                print(result)
+        else:
+
+            for x in self._select_filter(where, order_by, direction):
+                print(x)
+
+
+    def _filter(self, record, where):
+
+        operator = where["symbol"]
+        column = where["column"]
+        condition = str(where["condition"])
+
+        # get index of column to check
+        column_index = [x.attribute_name for x in self.columns].index(column)
+
+        if operator == "==":
+            if str(record[column_index]) == condition:
+                return True
+            else:
+                return False
+        elif operator == "<":
+            if str(record[column_index]) < condition:
+                return True
+            else:
+                return False
+        elif operator == ">":
+            if str(record[column_index]) > condition:
+                return True
+            else:
+                return False
+        elif operator == "<>":
+            if str(record[column_index]) != condition:
+                return True
+            else:
+                return False
+
+    def _select_filter(self, where=None, order_by=None, direction="desc"):
+
+        # if there are no such conditions, simply yield one record at a time
+        if where is None and order_by is None:
+            for key in self.data:
+                yield self.data[key]
+            return
+
+
+        if order_by is None:
+            # if there is more than one where, the outer wheres will be processed linearly.
+            # it does not make sense to make this unique combination of wheres into an index
+            if len(where) > 1:
+                for x in self._select_filter(where[1:]):
+                    print("--->", where[0])
+                    if self._filter(x, where[0]):
+                        yield x
+                return
+            else:
+                print(where)
+                operator = where[0]["symbol"]
+                column = where[0]["column"]
+                condition = str(where[0]["condition"])
+                print(column)
+
+                # if the index does not exit, create it
+                if column not in [y.attribute_name for y in self.indices]:
+                    self.create_index(column)
+
+                indices_index = [z.attribute_name for z in self.indices].index(column)
+                if operator == "==":
+                    try:
+                        for key in self.indices[indices_index].data:
+                            if key == condition:
+                                for x in self.indices[indices_index].data[key]:
+                                    yield self.data[x]
+                    except:
+                        pass
+                elif operator == "<":
+                    try:
+                        for key in self.indices[indices_index].data:
+                            if key < condition:
+                                for x in self.indices[indices_index].data[key]:
+                                    yield self.data[x]
+                    except:
+                        pass
+                elif operator == ">":
+                    try:
+                        for key in self.indices[indices_index].data:
+                            if key > condition:
+                                for x in self.indices[indices_index].data[key]:
+                                    yield self.data[x]
+                    except:
+                        pass
+                return
+        elif where is None:
+            for x in self._select_sort(order_by):
+                yield x
+        else:
+            if len(where) > 1:
+                for x in self._select_filter(where[1:], order_by, direction):
+                    if self._filter(x, where[0]):
+                        yield x
+                return
+            else:
+                for x in self._select_sort(order_by, direction):
+                    if self._filter(x, where[0]):
+                        yield x
+                return
+
+
+    def _select_sort(self, order_by, direction="desc"):
+
+        if len(order_by) > 1:
+            newIndex = self._create_index_from_generator(self._select_sort(order_by[1:], direction), order_by[0])
+            keys = list(newIndex.keys())
+
+            if direction == "asc":
+                keys.sort()
+            elif direction == "desc":
+                keys.sort(reverse=True)
+
+            for key in keys:
+                for record in newIndex[key]:
+                    # print(">>>>>>>>>", key, newIndex[key], record)
+                    yield self.data[record]
+        else:
+
+            column = order_by[0]
+
+            # if the index does not exit, create it
+            if column not in [y.attribute_name for y in self.indices]:
+                self.create_index(column)
+
+            index_pos = [x.attribute_name for x in self.indices].index(column)
+
+            keys = list(self.indices[index_pos].data.keys())
+
+            if direction == "asc":
+                keys.sort()
+            elif direction == "desc":
+                keys.sort(reverse=True)
+
+            for key in keys:
+                for record in self.indices[index_pos].data[key]:
+                    yield self.data[record]
+
+    def _create_index_from_generator(self, records, column):
+
+
+        index = {}
+
+        for x in [x.attribute_name for x in self.columns]:
+            print(x)
+
+        column_index = [x.attribute_name for x in self.columns].index(column)
+
+        try:
+            for record in records:
+                print("heree", record[column_index], index.keys())
+                if str(record[column_index]) in index:
+                    print("heree", record[column_index])
+                    index[str(record[column_index])].append(self.tuple_hasher(record))
+                else:
+                    index[str(record[column_index])] = [self.tuple_hasher(record)]
+
+        except:
+            pass
+
+        return index
+        # try:
+        #     for key in data:
+        #         if str(data[key][record_pos]) in self.data:
+        #             self.data[str(data[key][record_pos])].append(key)
+        #         else:
+        #             self.data[str(data[key][record_pos])] = [key]
+        # except:
+        #     pass
 
 class Column:
 
@@ -469,17 +737,41 @@ emp3 = ("0003", "Matthew", 25)
 # s = Table.create_from_join(6, 7)
 #-------------------------------------------------------
 
+where = [{"symbol": "<", "column": "Age", "condition": 40}] #, {"symbol": "==", "column": "Name", "condition": "Brandon"}]
+
 left = Table("Employees1", column_mapping, ["ID"])
 right = Table("Employees2", column_mapping, ["ID"])
 
 # left.add_record(emp3)
 # right.add_record(emp3)
 
-for x in left._select():
+for x in left._select_filter():
     print(x)
 
-for x in right._select():
+for x in right._select_filter():
     print(x)
+
+print("-------------")
+
+# for x in left._select_filter(where):
+#     print(x)
+
+# for x in left._select_sort(["Age", "ID"], "asc"):
+#     print(x)
+
+# for x in left._select_filter(where, ["ID"], "desc"):
+#     print(x)
+
+# left.update_record(["Age"], [25], where)
+
+aggregates = [("Name", "count"), ("Age", "max")]
+
+# left.select(columns, aggregates, ["ID"])
+left.select(columns, aggregates, ["ID"])
+
+#
+# for x in left._select_filter():
+#     print(x)
 
 # joined = Table.create_from_join(left, right, "ID", "ID")
 #
