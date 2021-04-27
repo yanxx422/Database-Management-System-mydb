@@ -1,11 +1,14 @@
 
-
 '''
 
 CLASSES:
 Table
 Column
 Index
+
+
+
+
 
 '''
 
@@ -18,41 +21,44 @@ Column_mapping
 '''
 
 
-
 import shelve
-#from blist import sorteddict
+from blist import sorteddict
 import hashlib
-from enum import Enum
-import json
-
-import jsonpickle 
-class ColumnType(Enum):
-    INT = int = 'int'
-    VARCHAR = varchar = 'str'
-    FLOAT= float = 'float'
-    
-TYPE_MAP = {
-    'int':int,
-    'float':float,
-    'str': str,
-    'INT':int,
-    'FLOAT': float,
-    'VARCHAR': str,
-    'varchar': str
-}
-
-
-tables = {}
-
-
-
-
-
-
 
 class Table:
 
     def __init__(self, table_name, column_mapping, primary_key):
+
+        # check if user has provided valid primary key list
+        if len(primary_key) < 1:
+            raise Exception("You must specify the primary key column.")
+
+        # Check if column_types are valid
+        for key in column_mapping:
+            if column_mapping[key] is not int and column_mapping[key] is not float and column_mapping[key] is not str:
+                raise TypeError('Data type is not valid')
+
+        # for i in range(len(column_names)):
+        #     if not (column_types[i] in ColumnType.__members__):
+        #         raise TypeError('Data type is not valid')
+
+        # Check if column names are unique:
+        if len(set(column_mapping.keys())) != len(column_mapping.keys()):
+            raise Exception("Can't have duplicate column names.")
+
+        # if len(set(column_names)) != len(column_names):
+        #     raise Exception("Can't have duplicate column names.")
+
+        # check that primary key columns are actually columns of the table
+        if not any(elem in primary_key for elem in column_mapping.keys()):
+            raise Exception("primary_key '%s' does not exist." % primary_key_column)
+
+        # # check if table name exists
+        # for key, value in tables.items():
+        #     if table_name == key:
+        #         raise Exception("Can't have duplicate column names.")
+
+
         self.table_name = table_name
         self.column_mapping = column_mapping
         self.primary_key = primary_key
@@ -329,6 +335,50 @@ class Table:
                         except:
                             pass
 
+
+    # def _filter(self, record, where):
+    #
+    #     operator = where["symbol"]
+    #     column = where["column"]
+    #     condition = str(where["condition"])
+    #
+    #     # get index of column to check
+    #     column_index = [x.attribute_name for x in self.columns].index(column)
+    #
+    #     if operator == "==":
+    #         if record[column_index] == condition:
+    #             return True
+    #         else:
+    #             return False
+    #     elif operator == "<":
+    #         if record[column_index] < condition:
+    #             return True
+    #         else:
+    #             return False
+    #     elif operator == ">":
+    #         if record[column_index] > condition:
+    #             return True
+    #         else:
+    #             return False
+
+    # def _select_filter(self, where=None, order_by=None):
+    #
+    #     # if there are no such conditions, simply yield one record at a time
+    #     if where is None and order_by is None:
+    #         for key in self.data:
+    #             yield self.data[key]
+    #         return
+    #
+    #
+    #     if order_by is None:
+    #         # if there is more than one where, the outer wheres will be processed linearly.
+    #         # it does not make sense to make this unique combination of wheres into an index
+    #         if len(where) > 1:
+    #             for x in self._select_filter(where[1:]):
+    #                 if self._filter(x, where[0]):
+    #                     yield x
+    #
+    #
     # def _select_sort(self, order_by):
     #
     #     if len(order_by) > 1:
@@ -340,7 +390,7 @@ class Table:
     #         index_pos = [x.attribute_name for x in self.indices].index(order_by[0])
     #
     #         for key in self.indices[index_pos]:
-    #             yield
+    #             yield self.data[self.indices[index_pos][key]]
 
 class Column:
 
@@ -364,72 +414,7 @@ class Index:
                     self.data[str(data[key][record_pos])] = [key]
         except:
             pass
-        
-        
-        
-        
-        
 
-
-  
-        
-def create_table (table_name, column_names, column_types, primary_key_column):
-    # Check if primary key exists
-    global tables 
-    
-    if primary_key_column == [""]:
-        raise Exception ("You must specify the primary key column.")
-    
-    # Check if column_types are valid 
-    for i in range(len(column_names)): 
-        if not (column_types[i] in ColumnType.__members__):
-            raise TypeError ('Data type is not valid')
-
-
-    if len(set(column_names)) != len(column_names):
-        raise Exception("Can't have duplicate column names.")
-
-    
-    print(column_names)
-    
-    print(primary_key_column)
-    
-    if not any(elem in primary_key_column for elem in column_names):
-        raise Exception("primary_key '%s' does not exist." % primary_key_column)
-        
-
-    
-    
-    # check if table name exists
-    for key,value in tables.items():
-        if table_name == key:
-            raise Exception("Can't have duplicate column names.")
-    
-    # create the table 
-    
-    my_table = Table(table_name,dict(zip(column_names,column_types)), primary_key_column)
-    
-    # Add it to the global list
-
-    
-    tables[table_name] = my_table
-    
-    print(tables[table_name])
-    
-    # save the global lists to a json file ? 
-    
-
-if __name__ == '__main__':
-    
-
-    table_name = "persons"
-    primary_key_column = ['ID']
-    column_types = ['int', 'varchar', 'varchar']
-    column_names = ['ID', 'lastname', 'City']
-    
-   
-
-    create_table(table_name, column_names, column_types, primary_key_column)
 
 #------------------------------------------------------
 # PROGRAM STARTS HERE
@@ -495,7 +480,15 @@ for x in left._select():
 for x in right._select():
     print(x)
 
-joined = Table.create_from_join(left, right, "ID", "ID")
+# joined = Table.create_from_join(left, right, "ID", "ID")
+#
+# for x in joined._select():
+#     print(x)
 
-for x in joined._select():
-    print(x)
+# Tables[table_name].add_record(sfewfwef)
+
+
+# {table_name: }
+
+
+# tables[table_name].add_record(record)

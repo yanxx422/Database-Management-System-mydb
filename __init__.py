@@ -1,5 +1,8 @@
 import re
 from cmd import Cmd
+import json
+
+from dataManagement import Table
 
 def find_2nd(string, substring):
     return string.find(substring, string.find(substring) + 1)
@@ -785,5 +788,29 @@ class Runner(Cmd):
     def default(self, line: str):
         print(f"Unknown command: {line.split(' ')[0]}")
 
+
+tables = {}
+metadata = {}
+
 if __name__ == "__main__":
+
+    # load metadata from json file
+    metadata = json.load("metadata.json")
+
+    # iterate over the keys of the metadata and instantiate table objects which can be added to the list
+    for key in metadata:
+        tables[key] = (Table(key, metadata[key][0], metadata[key][1]))
+
     Runner().cmdloop()
+
+    # ---- overwrite with new metadata ----
+
+    # clear metadata to update with current state from tables list
+    metadata.clear()
+
+    # iterate over the keys in the tables dict and store new metadata records
+    for key in tables:
+        metadata[key] = [tables[key].column_mapping, tables[key].primary_key]
+
+    # Overwrite old metadata file with new metadata dict ------------------
+    json.dumps(metadata, "metadata.json")
