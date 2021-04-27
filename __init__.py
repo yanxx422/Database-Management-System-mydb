@@ -629,6 +629,9 @@ class SQLParser:
             print(columns_to_be_updated)
             print(values_to_be_updated)
             
+            my_table = tables[table_name]
+            my_table.update_record(columns_to_be_updated,values_to_be_updated)
+            
             
             #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
                 
@@ -653,8 +656,8 @@ class SQLParser:
                 comp  = re.compile(pattern)
                 new_ret = comp.findall(condition)
                 #print(new_ret)
-                where.append({'column_name':new_ret[0][0], 'value':auto_type(new_ret[0][2])})
-    
+                #where.append({'column_name':new_ret[0][0], 'value':auto_type(new_ret[0][2])})
+                where.append({'symbol':"==",  "column" : new_ret[0][0], 'condition':auto_type(new_ret[0][2])})
             arg = arg[:location_where]
             pattern = r'(.*) (SET|set) (.*) '
             comp = re.compile(pattern)
@@ -671,12 +674,16 @@ class SQLParser:
                 columns_to_be_updated.append(new_ret[0][0])
                 values_to_be_updated.append(new_ret[0][2])
             
+            
             print(table_name)
             print(where)
             print(columns_to_be_updated)
             print(values_to_be_updated)
             
-            #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
+            #where = [{"symbol": "==", "column": "Age", "condition": 30}]
+            #v t.update_record(["Age"], [20], where)
+            my_table = tables[table_name]
+            my_table.update_record(columns_to_be_updated,values_to_be_updated,where)
         
  
     def exit(self,arg: str):

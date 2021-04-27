@@ -445,34 +445,37 @@ emp2 = ("0002", "Michael", 40)
 emp3 = ("0003", "Matthew", 25)
 
 #-------------------------------------------------------
-# t = Table("Employees", column_mapping, ["ID"])
+t = Table("Employees", column_mapping, ["ID"])
+
+# print(t.tuple_hasher(emp1))
+# print(t.tuple_hasher(emp1))
+
+
+# t.add_record(emp1)
+# t.add_record(emp2)
+# t.add_record(emp3)
 #
-# # print(t.tuple_hasher(emp1))
-# # print(t.tuple_hasher(emp1))
-#
-#
-# # t.add_record(emp1)
-# # t.add_record(emp2)
-# # t.add_record(emp3)
+# for x in t._select():
+#     print(x)
 # #
-# # for x in t._select():
-# #     print(x)
-# # #
-# # t.remove_record(emp1)
-# #
-# # for x in t._select():
-# #     print(x)
+# t.remove_record(emp1)
 #
-#
-#
-# where = [{"symbol": "<", "column": "Age", "condition": 60}]
-#
-# # for x in t._select(where):
-# #     print(x)
-#
-#
-# t.update_record(["Age"], [20], where)
-#
+# for x in t._select():
+#     print(x)
+
+
+
+where = [{"symbol": "<", "column": "Age", "condition": 60}]
+
+# for x in t._select(where):
+#     print(x)
+
+
+t.update_record(["Age"], [20], where)
+
+[{'column_name': 'id', 'value': 4}]
+['case_qty']
+['32']
 # #
 # # where = [{"symbol": "==", "column": "Age", "condition": 30}]
 # #
