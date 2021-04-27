@@ -19,7 +19,9 @@ def auto_type(value: str):
     return value
 
 
-
+def strip_list_noempty(mylist):
+    newlist = (item.strip() if hasattr(item, 'strip') else item for item in mylist)
+    return [item for item in newlist if item != '']
 
 class SQLParser:
     def __init__(self):
@@ -260,76 +262,309 @@ class SQLParser:
 
 
     def select(self,arg:str):
-        arg = arg.rstrip(';')
-        if 'where' in arg:
-            arg = arg.split('where')
-        else:
-            arg = arg.split('WHERE')
-            
-        # base_statement =  ['id,', 'name', 'from', 'students']
-        base_statement = self.filter_space(arg[0].split(" "))
         
-    
-        pattern = r'(.*) (FROM|from) (.*)'
-        comp = re.compile(pattern)
-        ret = comp.findall(" ".join(base_statement))
-        # ret =  [('id, name', 'from', 'students')]
-    
-        if ret and len(ret[0]) == 3:
-    
-            columns = ret[0][0]        
-            where = []
-                
-            if 'JOIN'in ret[0][2] or 'join'in ret[0][2]:
-                # For now only deal with one join condition, and not including "and" in join condition
-                pattern = r'(.*) (JOIN|join) (.*) (ON|on) (.*)(\.)(.*)(=|>|<|>=|<|<=|<>) (.*)(\.)(.*)'
+        arg = arg.rstrip(';')
+        if 'from' in arg:
+            arg = arg.split('from')
+        elif 'FROM' in arg:
+            arg = arg.split('FROM')
+        else:
+            raise Exception ("Syntax is not correct. Must have FROM keyword and provide a table name.")
+        
+        
+        table_name = re.sub(' +', ' ', arg[1]).strip()[:re.sub(' +', ' ', arg[1]).strip().find(" ")]
+        
+        #Remove extra space 
+        select_from = re.sub(' +', ' ', arg[0]).strip()
+        
+        select_from = strip_list_noempty(select_from.split(','))
+        #print(select_from)
+        
+        columns = []
+        aggregated_columns = []
+        if '.' in select_from[0]:
+            pattern = r'(.*)(\.)(.*)'
+            for substr in select_from:
+                pattern = r'(.*)(\.)(.*)'
                 comp  = re.compile(pattern)
-                new_ret = comp.findall((ret)[0][2])
-                table_name = new_ret[0][0]
-
-                new_columns = []
-                if columns != '*':
-                    columns = [column.strip() for column in columns.split(",")]
+                new_ret = comp.findall((substr))
+                for x in new_ret:
+                    if "(" not in x[0]:
+                        columns.append((x[0],x[2]))
                     
-                    for column in columns:
-                        new_columns.append(str(column).split("."))
+                    else: 
+        
+                        pl = x[0].find("(")
+                        pr = x[2].find(")")
+                 
+                        if x[0][:pl].lower().strip() not in ["min", "avg", "max","count","sum"]:
+                            raise Exception ("Aggregation function must be in one of these: min, avg, max, count and sum.")
+                        aggregated_columns.append((x[0][:pl].lower().strip() ,x[0][pl+1:],x[2][:pr]))
                         
                     
-                    if len(arg) == 2:
-                        conditions = self.filter_space(arg[1].split(" "))     
-                        if conditions:
-                            for i in range(0, len(conditions),3):
-                                table_column =  conditions[i]
-                                pattern = r'(.*)(\.)(.*)'
-                                comp  = re.compile(pattern)
-                                new_ret = comp.findall(table_column)
-
-                                where.append({'symbol': conditions[i+1], 'table': new_ret[0][0],'column':new_ret[0][2], 'condition': auto_type(conditions[i+2])})   
-                                
-                # call function
-                print(new_columns)
-                print(table_name)
-                print(where)            
-
-                
-            else:  
-                table_name = ret[0][2]
-                
-                if columns != '*':
-                    columns = [column.strip() for column in columns.split(",")]
+                      
+        
+        
+        elif "*" in select_from:
+            columns= select_from
+            #columns = ['*']
+            
+        else: 
+            # No dots
+            for x in select_from:
+                if"(" not in x:
+                    columns.append(x)
+                else:
+                     pl = x.find("(")
+                     pr = x.find(")")
+                     
+                     if x[:pl].lower().strip() not in ["min", "avg", "max","count","sum"]:
+                         raise Exception ("Aggregation function must be in one of these: min, avg, max, count and sum.")
                     
-                    if len(arg) == 2:
-                        conditions = self.filter_space(arg[1].split(" "))     
-                        # conditions = ['id', '=', '6']
-                        if conditions:
-                            for i in range(0, len(conditions),3):
-                                where.append({'symbol': conditions[i+1], 'column': conditions[i], 'condition': auto_type(conditions[i+2])})
-    
-                print(columns)
-                print(table_name)
-                print(where)            
-                #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
-
+                     aggregated_columns.append((x[:pl].lower().strip(),x[pl+1:pr]))
+                     
+        #These two are done.             
+        #print (columns)
+        #print(aggregated_columns)   
+        
+        
+        # Process where clause
+        where = []
+        where_statement= ""
+        if 'WHERE' in re.sub(' +', ' ', arg[1]):
+            where_statement = re.sub(' +', ' ', arg[1]).split('WHERE')[1]
+        elif 'where' in re.sub(' +', ' ', arg[1]):
+            where_statement = re.sub(' +', ' ', arg[1]).split('where')[1]
+            
+        if len(where_statement) != 0:
+            if "GROUP BY" in where_statement:
+                where_statement = where_statement.split('GROUP BY')[0]
+            elif "group by" in where_statement: 
+                where_statement = where_statement.split('group by')[0]
+            
+        if len(where_statement) != 0:
+            if "ORDER BY" in where_statement:
+                where_statement = where_statement.split('ORDER BY')[0]
+            elif "order by" in where_statement: 
+                where_statement = where_statement.split('order by')[0]
+        
+        
+        # Customers.CustomerID > 3 and Customers.CustomerName = "Jenny";         
+        # State <> NY 
+        
+        if len(where_statement) != 0:
+            where_statement = self.filter_space(where_statement.split(" "))
+            #['Customers.CustomerID', '>', '3', 'Customers.CustomerName', '=', '"Jenny";']
+            #['State', '<>', 'NY']
+             
+             # No dot situation:
+            if '.' in where_statement[0]:
+                for i in range(0, len(where_statement),3):
+                    table_column =  where_statement[i]
+                    
+                    pattern = r'(.*)(\.)(.*)'
+                    comp  = re.compile(pattern)
+                    new_ret = comp.findall(table_column)
+                    
+                    if '.' not in where_statement[i+2]:
+                        where.append({'symbol': where_statement[i+1], 'table': new_ret[0][0],'column':new_ret[0][2], 'condition': auto_type(where_statement[i+2])})   
+                    else: 
+                        #'orders.agent_code'
+                        p = where_statement[i+2].find(".")
+                        where.append({'symbol': where_statement[i+1], 'table': new_ret[0][0],'column':new_ret[0][2], 'condition': ((where_statement[i+2][:p].strip(),where_statement[i+2][p+1:].strip()))}) 
+                        
+            
+            if '.' not in where_statement[0]:
+                for i in range(0, len(where_statement),3):
+                    where.append({'symbol': where_statement[i+1], 'column': where_statement[i], 'condition': auto_type(where_statement[i+2])})
+                    
+        
+        # Process join condition, only support joining on one table 
+        # Only support one join! 
+        join = []
+        join_statement = ""
+        if 'join' in re.sub(' +', ' ', arg[1]):
+            join_statement = re.sub(' +', ' ', arg[1]).split('join')[1]
+        elif 'JOIN' in re.sub(' +', ' ', arg[1]):
+            join_statement = re.sub(' +', ' ', arg[1]).split('JOIN')[1]
+        
+        if len(join_statement) != 0:
+            if "GROUP BY" in join_statement:
+                join_statement = join_statement.split('GROUP BY')[0]
+            elif "group by" in join_statement: 
+                join_statement = join_statement.split('group by')[0]
+            
+        if len(join_statement) != 0:
+            if "ORDER BY" in join_statement:
+                join_statement = join_statement.split('ORDER BY')[0]
+            elif "order by" in join_statement: 
+                join_statement = join_statement.split('order by')[0]
+               
+            
+        if len(join_statement) != 0:
+            if "where" in join_statement:
+                join_statement = join_statement.split('where')[0]
+            elif "WHERE" in join_statement: 
+                join_statement = join_statement.split('WHERE')[0]
+        
+        
+        if len(join_statement) != 0:
+            if "on" in join_statement:
+                join_statement = join_statement.split('on')[1].strip()
+            elif "ON" in join_statement:
+                join_statement = join_statement.split('ON')[1].strip()
+            else:
+                raise Exception ("Syntax is not correct. Must have ON keyword for join statement.")
+        
+        
+        
+        if len(join_statement) != 0:
+            if "=" in join_statement:
+                join_statement = join_statement.split('=')
+            else:
+                raise Exception ("Syntax is not correct. Must have EQUAL keyword for join statement.")
+        
+        # ['Orders.order_id ', ' Customers.CustomerID']
+        if len(join_statement) != 0:
+            for x in join_statement:
+                p = x.find(".")
+                if p == -1:
+                    raise Exception("Join syntax is not correct, must include dot.")
+                
+                join.append((x[:p].strip(),x[p+1:].strip()))
+                     
+        # Process group by, only support single column 
+        
+        group_by = []
+        group_by_statement = ""
+        if 'group by' in re.sub(' +', ' ', arg[1]):
+            group_by_statement = re.sub(' +', ' ', arg[1]).split('group by')[1]
+        elif 'GROUP BY' in re.sub(' +', ' ', arg[1]):
+            group_by_statement = re.sub(' +', ' ', arg[1]).split('GROUP BY')[1]
+        
+        if len(group_by_statement) != 0:
+            if "ORDER BY" in group_by_statement:
+                group_by_statement = group_by_statement.split('ORDER BY')[1]
+            elif "order by" in group_by_statement: 
+                group_by_statement = group_by_statement.split('order by')[1]
+        
+        if len(group_by_statement) != 0:
+            if "." in group_by_statement:
+                p = group_by_statement.find(".")
+                group_by.append((group_by_statement[:p].strip(),group_by_statement[p+1:].strip()))
+            
+            else:
+                group_by.append(group_by_statement.strip())
+                
+        
+        # Process order by, only support ordering by one column
+        order_by = []
+        aggregated_order_by = []
+        order_by_statement = ""
+        if 'order by' in re.sub(' +', ' ', arg[1]):
+            order_by_statement = re.sub(' +', ' ', arg[1]).split('order by')[1]
+        elif 'ORDER BY' in re.sub(' +', ' ', arg[1]):
+            order_by_statement = re.sub(' +', ' ', arg[1]).split('ORDER BY')[1]
+        
+        #print(order_by_statement)  
+        
+        
+        #Count(CustomerID) DESC
+        #agents.agent_code
+        #State DESC
+        # SUM(Customers.CustomerID) DESC
+        #AVG(Customers.CustomerID)
+        
+        if len(order_by_statement)!= 0:
+            
+            if "DESC" in order_by_statement:
+                order_by_statement = order_by_statement.strip("DESC").strip()
+                if "(" in order_by_statement:
+                    if "." in order_by_statement:
+                        l = order_by_statement.find("(")
+                        func = order_by_statement[:l].strip().lower()
+                        if func not in ["min", "avg", "max","count","sum"]:
+                           
+                            raise Exception ("Aggregation function must be in one of these: min, avg, max, count and sum.")
+                
+                        dot_position = order_by_statement.find(".")
+                        table_name = order_by_statement[l+1:dot_position].strip()
+                        r = order_by_statement.find(")")
+                        column_name =  order_by_statement[dot_position+1:r].strip()
+                        aggregated_order_by.append(("desc",func,table_name,column_name))
+            
+                    
+                    else:
+                        
+                        pl = order_by_statement.find("(")
+                        pr = order_by_statement.find(")")
+                     
+                        if order_by_statement[:pl].lower().strip() not in ["min", "avg", "max","count","sum"]:
+                                raise Exception ("Aggregation function must be in one of these: min, avg, max, count and sum.")
+                        func = (order_by_statement[:pl].lower().strip())
+                        aggregated_order_by.append(("desc",func,order_by_statement[pl+1:pr].strip()))
+                        #[('desc', 'count', 'CustomerID')]
+                        
+                        
+                else: 
+                    # No aggregate function but contaisn dots
+                    if "." in order_by_statement:
+                        dot_position = order_by_statement.find(".")
+                        table_name = order_by_statement[:dot_position].strip()
+                        column_name =  order_by_statement[dot_position+1:].strip()
+                        order_by.append(("desc",table_name,column_name))
+            
+                    else:
+                        #No aggregate function, no dots
+                        order_by.append(("desc",order_by_statement))
+                        
+            else:
+                order_by_statement = order_by_statement.strip()
+                if "(" in order_by_statement:
+                    if "." in order_by_statement:
+                        l = order_by_statement.find("(")
+                        func = order_by_statement[:l].strip().lower()
+                        if func not in ["min", "avg", "max","count","sum"]:
+                           
+                            raise Exception ("Aggregation function must be in one of these: min, avg, max, count and sum.")
+                
+                        dot_position = order_by_statement.find(".")
+                        table_name = order_by_statement[l+1:dot_position].strip()
+                        r = order_by_statement.find(")")
+                        column_name =  order_by_statement[dot_position+1:r].strip()
+                        aggregated_order_by.append(("asc",func,table_name,column_name))
+                        
+                    else:
+                        
+                        pl = order_by_statement.find("(")
+                        pr = order_by_statement.find(")")
+                     
+                        if order_by_statement[:pl].lower().strip() not in ["min", "avg", "max","count","sum"]:
+                                raise Exception ("Aggregation function must be in one of these: min, avg, max, count and sum.")
+                        func = (order_by_statement[:pl].lower().strip())
+                        aggregated_order_by.append(("asc",func,order_by_statement[pl+1:pr].strip()))
+                        #[('desc', 'count', 'CustomerID')]
+                        
+                        
+                else: 
+                    # No aggregate function but contaisn dots
+                    if "." in order_by_statement:
+                        dot_position = order_by_statement.find(".")
+                        table_name = order_by_statement[:dot_position].strip()
+                        column_name =  order_by_statement[dot_position+1:].strip()
+                        order_by.append(("asc",table_name,column_name))
+            
+                    else:
+                        #No aggregate function, no dots
+                        order_by.append(("asc",order_by_statement))    
+        print(columns)
+        print(aggregated_columns)
+        print(where)
+        print(join)
+        print(group_by)
+        print(order_by)
+        print(aggregated_order_by)
+                   
 
     
     # UPDATE Customers SET ContactName='Juan';
