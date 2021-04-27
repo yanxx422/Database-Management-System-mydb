@@ -172,6 +172,9 @@ class SQLParser:
             print(table_name)
             
             #TO DO: pass table_name to somewhere!!
+            tables[table_name].drop_table()
+            del tables[table_name]
+            del metadata[table_name]
             
         elif lower_arg[:5] == 'index':
             index_name = arg[5:].strip()

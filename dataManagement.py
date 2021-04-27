@@ -97,6 +97,7 @@ class Table:
         self.size = 0
 
     @classmethod
+
     def create_from_join(cls, left_table, right_table, leftColumnOfJoin, rightColumnOfJoin):
 
 
@@ -451,10 +452,12 @@ t = Table("Employees", column_mapping, ["ID"])
 # print(t.tuple_hasher(emp1))
 
 
-# t.add_record(emp1)
-# t.add_record(emp2)
-# t.add_record(emp3)
-#
+t.add_record(emp1)
+t.add_record(emp2)
+t.add_record(emp3)
+
+t.print_this_table()
+
 # for x in t._select():
 #     print(x)
 # #
@@ -482,8 +485,8 @@ t.update_record(["Age"], [20], where)
 # # for x in t._select(where):
 # #     print(x)
 # #
-# for x in t._select():
-#     print(x)
+for x in t._select():
+    print(x)
 #
 # print(t.size)
 
