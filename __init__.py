@@ -1,8 +1,14 @@
 import re
 from cmd import Cmd
 import json
-
 from dataManagement import Table
+
+#tables maps table name to table objects
+tables = {}
+
+#metadata maps table name to {column names, column types}
+metadata = {}
+
 
 def find_2nd(string, substring):
     return string.find(substring, string.find(substring) + 1)
@@ -30,7 +36,7 @@ class SQLParser:
     def __init__(self):
         self = self 
 
-   #create table persons( ID int, lastname VARCHAR, City VARCHAR, PRIMARY KEY (ID));
+   #create table persons( ID int, lastname varchar, City varchar, PRIMARY KEY (ID));
     def create(self,arg: str):
         arg =arg.strip()
         
@@ -87,17 +93,25 @@ class SQLParser:
                 column_types.append(item[1].lower())
             
             #Example column_names: ['ID', 'lastname', 'City']
-            print(column_names)
+            #print(column_names)
             # Types are all in lower cases
             #Example column_types: ['int', 'varchar', 'varchar'
-            print(column_types)
+            #print(column_types)
             #Example primary_key_column ['ID']
-            print(primary_key_column)
-            print(table_name)
+            #print(primary_key_column)
+            #print(table_name)
+            
+            for key, value in tables.items():
+                if key == table_name:
+                    raise Exception ("Table alreay exists.")
             
             # Pass column_names, column_types,primary_key_column, table_name to somewhere 
+            myTable = Table(table_name, dict(zip(column_names,column_types)), primary_key_column)
             
-            # TO DO .....
+            # Add table object to tables
+            tables[table_name] = myTable
+            
+            
             
         
         #CREATE INDEX index_name ON tableName (tableColumn);
@@ -197,9 +211,10 @@ class SQLParser:
         table_name = arg[into_positoin+4:lbracket_columns_position+4].strip(' ')
  
              
-        print(table_name)        
+        
         print(values)
-        print(columns)
+        print(tables[table_name])
+        tables[table_name].add_record(values)
         
         
         
@@ -789,28 +804,31 @@ class Runner(Cmd):
         print(f"Unknown command: {line.split(' ')[0]}")
 
 
-tables = {}
-metadata = {}
-
 if __name__ == "__main__":
 
     # load metadata from json file
-    metadata = json.load("metadata.json")
+    #metadata = json.load("metadata.json")
 
     # iterate over the keys of the metadata and instantiate table objects which can be added to the list
-    for key in metadata:
-        tables[key] = (Table(key, metadata[key][0], metadata[key][1]))
+    #for key in metadata:
+        #tables[key] = (Table(key, metadata[key][0], metadata[key][1]))
 
     Runner().cmdloop()
+    
+    for key,value in tables.items():
+        print(key)
+        print(value)
+    
+
 
     # ---- overwrite with new metadata ----
 
     # clear metadata to update with current state from tables list
-    metadata.clear()
+    #metadata.clear()
 
     # iterate over the keys in the tables dict and store new metadata records
-    for key in tables:
-        metadata[key] = [tables[key].column_mapping, tables[key].primary_key]
+    #for key in tables:
+        #metadata[key] = [tables[key].column_mapping, tables[key].primary_key]
 
     # Overwrite old metadata file with new metadata dict ------------------
-    json.dumps(metadata, "metadata.json")
+    #json.dumps(metadata, "metadata.json")

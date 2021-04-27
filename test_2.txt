@@ -1,0 +1,4 @@
+create table Rel-i-i-1000 (left INT, right INT, PRIMARY KEY (left));
+insert into Rel-i-i-1000 (left,right) values (1,1);
+insert into Rel-i-i-1000 (left,right) values (2,1);
+insert into Rel-i-i-1000 (left,right) values (3,1);

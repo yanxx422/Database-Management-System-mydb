@@ -24,6 +24,25 @@ Column_mapping
 import shelve
 from blist import sorteddict
 import hashlib
+from enum import Enum
+
+
+class ColumnType(Enum):
+    INT = int = 'int'
+    VARCHAR = varchar = 'str'
+    FLOAT= float = 'float'
+    
+TYPE_MAP = {
+    'int':int,
+    'float':float,
+    'str': str,
+    'INT':int,
+    'FLOAT': float,
+    'VARCHAR': str,
+    'varchar': str
+}
+
+
 
 class Table:
 
@@ -34,9 +53,10 @@ class Table:
             raise Exception("You must specify the primary key column.")
 
         # Check if column_types are valid
-        for key in column_mapping:
-            if column_mapping[key] is not int and column_mapping[key] is not float and column_mapping[key] is not str:
-                raise TypeError('Data type is not valid')
+        # Check if column_types are valid 
+        for key,value in column_mapping.items(): 
+            if not (value in ColumnType.__members__):
+                raise TypeError ('Data type is not valid')
 
         # for i in range(len(column_names)):
         #     if not (column_types[i] in ColumnType.__members__):
@@ -178,9 +198,8 @@ class Table:
             raise Exception("Number of columns in record does not match number of columns in table.")
         # --------- check if data_types match
         for element, column in zip(record, self.columns):
-            if not isinstance(element, column.data_type):
-                raise Exception("Data_type of record attribute: " + column.attribute_name + " is invalid.")
-
+            if not isinstance(element, TYPE_MAP[column.data_type]):
+                raise TypeError('data type error, value must be %s' % column.data_type)
         # check if record already exists
         hash = self.tuple_hasher(record)
         if hash in self.data:
@@ -420,7 +439,7 @@ class Index:
 # PROGRAM STARTS HERE
 
 columns = ["ID", "Name", "Age"]
-column_mapping = {"ID": str, "Name": str, "Age": int}
+column_mapping = {"ID": "varchar", "Name": "varchar", "Age": "int"}
 emp1 = ["0001", "Brandon", 25]
 emp2 = ("0002", "Michael", 40)
 emp3 = ("0003", "Matthew", 25)
