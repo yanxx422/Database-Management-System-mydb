@@ -467,9 +467,9 @@ class SQLParser:
         
         if len(group_by_statement) != 0:
             if "ORDER BY" in group_by_statement:
-                group_by_statement = group_by_statement.split('ORDER BY')[1]
+                group_by_statement = group_by_statement.split('ORDER BY')[0]
             elif "order by" in group_by_statement: 
-                group_by_statement = group_by_statement.split('order by')[1]
+                group_by_statement = group_by_statement.split('order by')[0]
         
         if len(group_by_statement) != 0:
             if "." in group_by_statement:
