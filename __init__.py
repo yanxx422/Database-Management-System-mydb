@@ -2,13 +2,20 @@ import re
 from cmd import Cmd
 import json
 from dataManagement import Table
-
+import os.path
 #tables maps table name to table objects
 tables = {}
 
 #metadata maps table name to {column names, column types}
 metadata = {}
 
+
+
+def print_this_table(table_name):
+    my_table = tables[table_name]
+    
+    
+    
 
 def find_2nd(string, substring):
     return string.find(substring, string.find(substring) + 1)
@@ -92,24 +99,22 @@ class SQLParser:
                 column_names.append(item[0])
                 column_types.append(item[1].lower())
             
-            #Example column_names: ['ID', 'lastname', 'City']
-            #print(column_names)
-            # Types are all in lower cases
-            #Example column_types: ['int', 'varchar', 'varchar'
-            #print(column_types)
-            #Example primary_key_column ['ID']
-            #print(primary_key_column)
-            #print(table_name)
+
             
             for key, value in tables.items():
                 if key == table_name:
                     raise Exception ("Table alreay exists.")
+            
+            
+            # Update metadata
+            metadata[table_name] = [table_name,dict(zip(column_names,column_types)),primary_key_column]
             
             # Pass column_names, column_types,primary_key_column, table_name to somewhere 
             myTable = Table(table_name, dict(zip(column_names,column_types)), primary_key_column)
             
             # Add table object to tables
             tables[table_name] = myTable
+            
             
             
             
@@ -804,20 +809,57 @@ class Runner(Cmd):
         print(f"Unknown command: {line.split(' ')[0]}")
 
 
+
+def save_metadata():
+    with open ('metadata.json','w') as metafile:
+        
+        #Erase the meta_data_file 
+        metafile.truncate(0)
+        json.dump(metadata, metafile)
+        
+
+
+def load_metadata():
+    if not os.path.exists('metadata.json'):
+        with open('metadata.json', 'w') as myfile:
+             pass
+    else:
+        with open('metadata.json', 'r+') as myfile:
+            #data = myfile.read()
+            json_data = json.load(myfile)
+            print(json_data)
+            for key, value in json_data.items():
+
+                tables[key] = Table(key,value[1],value[2])
+                
+                metadata[key] =[key,value[1],value[2]]
+            
+        
+        
+        
+            
+        
+#create table persons( ID int, lastname varchar, City varchar, PRIMARY KEY (ID));
+#create table students( ID int, lastname varchar, Grade varchar, PRIMARY KEY (ID));
+
+# ["persons", {"ID": "int", "lastname": "varchar", "City": "varchar"}, ["ID"]]
+
 if __name__ == "__main__":
 
     # load metadata from json file
+    
     #metadata = json.load("metadata.json")
 
     # iterate over the keys of the metadata and instantiate table objects which can be added to the list
     #for key in metadata:
         #tables[key] = (Table(key, metadata[key][0], metadata[key][1]))
-
+    
+    #
+    
+    load_metadata()
     Runner().cmdloop()
     
-    for key,value in tables.items():
-        print(key)
-        print(value)
+    save_metadata()
     
 
 

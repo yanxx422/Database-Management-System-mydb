@@ -410,7 +410,7 @@ class Table:
     #
     #         for key in self.indices[index_pos]:
     #             yield self.data[self.indices[index_pos][key]]
-
+    
 class Column:
 
     def __init__(self, attribute_name, data_type):
