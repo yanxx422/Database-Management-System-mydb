@@ -813,26 +813,31 @@ class Runner(Cmd):
 def save_metadata():
     with open ('metadata.json','w') as metafile:
         
-        #Erase the meta_data_file 
+        #Erase the meta_data_file e
         metafile.truncate(0)
         json.dump(metadata, metafile)
         
 
 
 def load_metadata():
+
+
     if not os.path.exists('metadata.json'):
         with open('metadata.json', 'w') as myfile:
              pass
     else:
-        with open('metadata.json', 'r+') as myfile:
-            #data = myfile.read()
-            json_data = json.load(myfile)
-            print(json_data)
-            for key, value in json_data.items():
-
-                tables[key] = Table(key,value[1],value[2])
-                
-                metadata[key] =[key,value[1],value[2]]
+        if os.stat("metadata.json").st_size == 0:
+            os.remove("metadata.json")
+        else:
+            with open('metadata.json', 'r+') as myfile:
+                #data = myfile.read()
+                json_data = json.load(myfile)
+                print(json_data)
+                for key, value in json_data.items():
+    
+                    tables[key] = Table(key,value[1],value[2])
+                    
+                    metadata[key] =[key,value[1],value[2]]
             
         
         
