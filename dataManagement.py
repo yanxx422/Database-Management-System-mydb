@@ -767,12 +767,12 @@ class Index:
 
 #------------------------------------------------------
 # PROGRAM STARTS HERE
-
-columns = ["ID", "Name", "Age"]
-column_mapping = {"ID": "VARCHAR", "Name": "VARCHAR", "Age": "int"}
-emp1 = ["0001", "Brandon", 25]
-emp2 = ("0002", "Michael", 40)
-emp3 = ("0003", "Matthew", 25)
+#
+# columns = ["ID", "Name", "Age"]
+# column_mapping = {"ID": "VARCHAR", "Name": "VARCHAR", "Age": "int"}
+# emp1 = ["0001", "Brandon", 25]
+# emp2 = ("0002", "Michael", 40)
+# emp3 = ("0003", "Matthew", 25)
 
 #-------------------------------------------------------
 # t = Table("Employees", column_mapping, ["ID"])
@@ -816,53 +816,53 @@ emp3 = ("0003", "Matthew", 25)
 
 # s = Table.create_from_join(6, 7)
 #-------------------------------------------------------
-
-where = [{"symbol": "<", "column": "Age", "condition": 40}] #, {"symbol": "==", "column": "Name", "condition": "Brandon"}]
-
-left = Table("Employees1", column_mapping, ["ID"])
-right = Table("Employees2", column_mapping, ["ID"])
-
-# left.add_record(emp3)
-# right.add_record(emp3)
-
-for x in left._select_filter():
-    print(x)
-
-for x in right._select_filter():
-    print(x)
-
-print("-------------")
-
-# for x in left._select_filter(where):
-#     print(x)
-
-# for x in left._select_sort(["Age", "ID"], "asc"):
-#     print(x)
-
-# for x in left._select_filter(where, ["ID"], "desc"):
-#     print(x)
-
-# left.update_record(["Age"], [25], where)
-
-aggregates = [("Name", "count"), ("Age", "max")]
-
-# left.select(columns, aggregates, ["ID"])
-left.select(columns, aggregates, ["ID"])
-
+#
+# where = [{"symbol": "<", "column": "Age", "condition": 40}] #, {"symbol": "==", "column": "Name", "condition": "Brandon"}]
+#
+# left = Table("Employees1", column_mapping, ["ID"])
+# right = Table("Employees2", column_mapping, ["ID"])
+#
+# # left.add_record(emp3)
+# # right.add_record(emp3)
 #
 # for x in left._select_filter():
 #     print(x)
-
-# joined = Table.create_from_join(left, right, "ID", "ID")
 #
-# for x in joined._select():
+# for x in right._select_filter():
 #     print(x)
-
-# Tables[table_name].add_record(sfewfwef)
-
-
-# {table_name: }
-
-
-# tables[table_name].add_record(record)
-
+#
+# print("-------------")
+#
+# # for x in left._select_filter(where):
+# #     print(x)
+#
+# # for x in left._select_sort(["Age", "ID"], "asc"):
+# #     print(x)
+#
+# # for x in left._select_filter(where, ["ID"], "desc"):
+# #     print(x)
+#
+# # left.update_record(["Age"], [25], where)
+#
+# aggregates = [("Name", "count"), ("Age", "max")]
+#
+# # left.select(columns, aggregates, ["ID"])
+# left.select(columns, aggregates, ["ID"])
+#
+# #
+# # for x in left._select_filter():
+# #     print(x)
+#
+# # joined = Table.create_from_join(left, right, "ID", "ID")
+# #
+# # for x in joined._select():
+# #     print(x)
+#
+# # Tables[table_name].add_record(sfewfwef)
+#
+#
+# # {table_name: }
+#
+#
+# # tables[table_name].add_record(record)
+#

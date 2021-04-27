@@ -1,1 +1,0 @@
-{"school_outbreak": ["school_outbreak", {"id": "int", "case_qty": "int", "school": "varchar"}, ["id"]], "gender_group": ["gender_group", {"id": "int", "gender": "varchar"}, ["id"]], "gender_outbreak": ["gender_outbreak", {"id": "int", "case_qty": "int", "gender_id": "int"}, ["id"]]}

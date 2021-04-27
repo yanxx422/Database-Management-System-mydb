@@ -298,8 +298,9 @@ class SQLParser:
             raise Exception ("Syntax is not correct. Must have FROM keyword and provide a table name.")
         
         
-        table_name = re.sub(' +', ' ', arg[1]).strip()[:re.sub(' +', ' ', arg[1]).strip().find(" ")]
-        
+        # table_name = re.sub(' +', ' ', arg[1]).strip()[:re.sub(' +', ' ', arg[1]).strip().find(" ")]
+        table_name = re.sub(' +', ' ', arg[1]).strip()
+
         #Remove extra space 
         select_from = re.sub(' +', ' ', arg[0]).strip()
         
@@ -583,6 +584,43 @@ class SQLParser:
                     else:
                         #No aggregate function, no dots
                         order_by.append(("asc",order_by_statement))    
+
+        # print(table_name)
+        # def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc"):
+
+        aggregates = []
+        if len(aggregated_columns) == 0:
+            aggregates = None
+        else:
+            for ag in aggregated_columns:
+                aggregates.append((ag[2], ag[0]))
+
+        if len(group_by) == 0:
+            group_by = None
+
+        if len(where) == 0:
+            where = None
+
+        order = []
+        direction = "desc"
+        if len(order_by) == 0:
+            order_by = None
+            direction = "desc"
+        else:
+            for od in order_by:
+                order.append(od[1])
+                direction = od[0]
+
+        print(aggregates)
+
+        print(tables)
+
+        if len(join) == 0:
+            tables[table_name].select(columns, aggregates, group_by, where, order, direction)
+
+        # [("Name", "count"), ("Age", "max")]
+
+
         print(columns)
         print(aggregated_columns)
         print(where)
