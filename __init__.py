@@ -586,27 +586,68 @@ class SQLParser:
             if element =="*":
                 tables[table_name].select()
                 return 
-        
-        
+   
+        for i,tup in enumerate(columns):
+            columns[i]=tup[0]+'.'+tup[1]
+        if join==[]: # no join
+            join=None
+            if order_by==[]:
+                order_by=None
+                direct='asc'
+            else:
+                if len(order_by[0])==2:
+                    direct=order_by[0][0]
+                    order_by=[order_by[0][1]]         
+                else:
+                    direct='asc'
+            if aggregated_columns==[]:
+                aggregated_columns=None
+            else:
+                for i,tup in enumerate(aggregated_columns):
+                    aggregated_columns[i]=(tup[1],tup[0])
+            if group_by==[]:
+                group_by=None
+            else:
+                group_by=[group_by[0][0]+'.'+group_by[0][1]]
+            if where==[]:
+                where==None
+                
+                       
+        else: # join
+            for i,tup in enumerate(join):
+                join[i]=(tup[0]+'.'+tup[1])
+            if order_by==[]:
+                order_by=None
+                direct='asc'
+            else:
+                if len(order_by[0])==2:
+                    order_by=[order_by[0][0]+'.'+order_by[0][1]]
+                    direct='asc'
+                else:
+                    direct=order_by[0][0]
+                    order_by=[order_by[0][1]+'.'+order_by[0][2]]
+            if aggregated_columns==[]:
+                aggregated_columns=None
+            else:
+                for i,tup in enumerate(aggregated_columns):
+                    aggregated_columns[i]=(tup[1]+'.'+tup[2],tup[0])
+            if where==[]:
+                where==None
+            else:
+                for i,dict in enumerate(where):
+                    where[i]['column']=dict['table']+'.'+dict['column']
+                    del where[i]['table']
+                    if isinstance(dict['condition'],tuple):
+                        where[i]['condition']=dict['condition'][0]+'.'+dict['condition'][1]
+            if group_by==[]:
+                group_by=None
+            else:
+                group_by=[group_by[0][0]+'.'+group_by[0][1]]
             
-
-            
-        # aggregated_by [("Name", "count"), ("Age", "max")]
-        #goup by 
-        
-        #where 
-        #def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc")
-        
-        if len(join) == 0:
-            # No dot situation
-            pass
             
             
             
         
-        else:
-            #We have a join statement, dot 
-            pass
             
 
 
@@ -616,6 +657,8 @@ class SQLParser:
         print(join)
         print(group_by)
         print(order_by)
+        print(direct)
+        #tables[table_name].select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc")
 
                    
 
