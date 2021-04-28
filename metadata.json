@@ -1,0 +1,1 @@
+{"accounts": ["accounts", {"ID": "int", "name": "varchar", "website": "varchar", "sales_rep_id": "int"}, ["ID"]]}

@@ -117,42 +117,41 @@ class SQLParser:
             
             
             
-            
         
         #CREATE INDEX index_name ON tableName (tableColumn);
         elif arg[:5].lower() == 'index':
             
             arg =arg[5:] 
             
+            print(arg)
             arg = re.sub(' +', ' ', arg)
             
             on_position = arg.lower().find('on')
             
             if on_position == -1:
                 raise Exception(f"'on' is missing when creating index.")
-            index_name = arg[:on_position].strip()
             
-        
+            
+            table_name = arg[3:][on_position:].strip()
+            
             location_lbracket = arg.find('(')
             if location_lbracket == -1:
                 raise Exception(f"Indexed attribute format is wrong.")
-            table_name = arg[on_position + len('on'): location_lbracket].strip()   
-        
-    
-        
+            table_name = arg[3:][on_position: location_lbracket-3].strip() 
+
             location_rbracket = arg.find(')')
             if location_rbracket == -1:
                 raise Exception(f"Indexed attribute format is wrong.")
             indexed_column = arg[location_lbracket + 1: location_rbracket].strip()
-        
+            
             if ',' in indexed_column:
                 raise Exception('Only single attribute index is supported.')
-        
-            print(indexed_column)
-            print(index_name)
-            print(table_name)
-            # TO DO 
-            # Pass indexed_column, index_name and table_name to somewhere 
+                
+            
+            tables[table_name].create_index(indexed_column)
+            
+            
+    
         
         else:
             raise Exception("Create Syntax is not valid.")
@@ -162,14 +161,12 @@ class SQLParser:
     #DROP INDEX index_name;
     
     def drop(self,arg: str):
-        print("drop!")
         arg = arg.rstrip(';')
         arg =  " ".join(arg.split())
         lower_arg = arg.lower()
-            
         if lower_arg[:5] == 'table':
             table_name = arg[5:].strip()
-            print(table_name)
+        
             
             #TO DO: pass table_name to somewhere!!
             tables[table_name].drop_table()
@@ -177,14 +174,15 @@ class SQLParser:
             del metadata[table_name]
             
         elif lower_arg[:5] == 'index':
-            index_name = arg[5:].strip()
-            print(index_name)
+            print(arg[8:])
             
-            #TO DO: pass index_name to somewhere!!
+            l = arg[8:].find("(")
+            r = arg[8:].find(")")
             
-        else:
-            raise Exception ("Drop statement syntax is not valid. ")
-
+            table_name = arg[8:][:l].strip()
+            column_name = arg[8:][l+1:r].strip()
+            tables[table_name].drop_index(column_name)
+                
 
     
     #INSERT INTO table_name (column1, column2, column3, ...) VALUES (value1, value2, value3, ...); 
@@ -218,10 +216,6 @@ class SQLParser:
         
         table_name = arg[into_positoin+4:lbracket_columns_position+4].strip(' ')
  
-             
-        
-        print(values)
-        print(tables[table_name])
         tables[table_name].add_record(values)
         
         
@@ -239,10 +233,11 @@ class SQLParser:
     
         where_position = arg_lower.find('where')
         if where_position == -1:
-            table_name = arg[from_position + 4:].strip()
-            print(table_name)
+            #table_name = arg[from_position + 4:].strip()
+            #print(table_name)
             # No where clase, pass table_name to somewhere !
             # TO DO ... 
+            tables[table_name].delete_record()
             
         else:
             table_name = arg[from_position + 4: where_position].strip()
@@ -255,7 +250,7 @@ class SQLParser:
             conditions = list(map(str.strip, conditions))
             where = []
             for condition in conditions:
-                operators = ['=', '<>', '<', '>', '<=', '>=']
+                operators = ['==', '<>', '<', '>', '<=', '>=']
                 no_operator = True
                 for operator in operators:
                     if operator in condition:
@@ -268,11 +263,10 @@ class SQLParser:
                 if no_operator:
                     raise Exception(f"no operator found in {condition}")
                 r_op = auto_type(r_op)
-                where.append({'symbol': operator, 'column_name': l_op, 'condition': r_op})
+                where.append({'symbol': operator, 'column': l_op, 'condition': r_op})
             print(where)
-            print(table_name)
-            # where clase, pass table_name and where to somewhere !
-            # TO DO ...                 
+            #print(table_name)    
+            tables[table_name].delete_record(where)
 
     def filter_space(self, obj):
         ret = []
@@ -585,40 +579,35 @@ class SQLParser:
                         #No aggregate function, no dots
                         order_by.append(("asc",order_by_statement))    
 
-        # print(table_name)
-        # def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc"):
 
-        aggregates = []
-        if len(aggregated_columns) == 0:
-            aggregates = None
-        else:
-            for ag in aggregated_columns:
-                aggregates.append((ag[2], ag[0]))
+        
+        
+        for element in columns:
+            if element =="*":
+                tables[table_name].select()
+                return 
+        
+        
+            
 
-        if len(group_by) == 0:
-            group_by = None
-
-        if len(where) == 0:
-            where = None
-
-        order = []
-        direction = "desc"
-        if len(order_by) == 0:
-            order_by = None
-            direction = "desc"
-        else:
-            for od in order_by:
-                order.append(od[1])
-                direction = od[0]
-
-        print(aggregates)
-
-        print(tables)
-
+            
+        # aggregated_by [("Name", "count"), ("Age", "max")]
+        #goup by 
+        
+        #where 
+        #def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc")
+        
         if len(join) == 0:
-            tables[table_name].select(columns, aggregates, group_by, where, order, direction)
-
-        # [("Name", "count"), ("Age", "max")]
+            # No dot situation
+            pass
+            
+            
+            
+        
+        else:
+            #We have a join statement, dot 
+            pass
+            
 
 
         print(columns)
@@ -627,7 +616,7 @@ class SQLParser:
         print(join)
         print(group_by)
         print(order_by)
-        print(aggregated_order_by)
+
                    
 
     
@@ -670,11 +659,12 @@ class SQLParser:
             print(columns_to_be_updated)
             print(values_to_be_updated)
             
-            my_table = tables[table_name]
-            my_table.update_record(columns_to_be_updated,values_to_be_updated)
+            #my_table = tables[table_name]
+            #my_table.update_record(columns_to_be_updated,values_to_be_updated)
             
             
             #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
+            tables[table_name].update_record(columns_to_be_updated,values_to_be_updated)
                 
         else:
             table_name = arg[: location_set].strip()
@@ -715,16 +705,22 @@ class SQLParser:
                 columns_to_be_updated.append(new_ret[0][0])
                 values_to_be_updated.append(new_ret[0][2])
             
-            
+            #accounts
             print(table_name)
+            
             print(where)
+            
+            #['name']
             print(columns_to_be_updated)
+            
+            #['Apple']
             print(values_to_be_updated)
             
             #where = [{"symbol": "==", "column": "Age", "condition": 30}]
             #v t.update_record(["Age"], [20], where)
-            my_table = tables[table_name]
-            my_table.update_record(columns_to_be_updated,values_to_be_updated,where)
+           
+            tables[table_name].update_record(columns_to_be_updated,values_to_be_updated,where)
+         
         
  
     def exit(self,arg: str):
@@ -869,24 +865,23 @@ def save_metadata():
 
 def load_metadata():
 
-
     if not os.path.exists('metadata.json'):
         with open('metadata.json', 'w') as myfile:
              pass
     else:
-        if os.stat("metadata.json").st_size == 0:
-            os.remove("metadata.json")
-        else:
-            with open('metadata.json', 'r+') as myfile:
-                #data = myfile.read()
-                json_data = json.load(myfile)
-                print(json_data)
-                for key, value in json_data.items():
-    
-                    tables[key] = Table(key,value[1],value[2])
-                    
-                    metadata[key] =[key,value[1],value[2]]
-            
+        
+        with open('metadata.json', 'r+') as myfile:
+            #data = myfile.read()
+            json_data = json.load(myfile)
+            for key, value in json_data.items():
+
+                tables[key] = Table(key,value[1],value[2])
+                
+                metadata[key] =[key,value[1],value[2]]
+                
+                print(tables)
+                print(metadata)
+        
         
         
         

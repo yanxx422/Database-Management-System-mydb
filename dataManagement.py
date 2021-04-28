@@ -1,29 +1,21 @@
 
 
 '''
-
 CLASSES:
 Table
 Column
 Index
-
-
-
-
-
 '''
 
 
 '''
 Column_mapping
-
 {attribute: data_type, ...}
-
 '''
 
 
 import shelve
-from blist import sorteddict
+#from blist import sorteddict
 import hashlib
 import os
 
@@ -223,8 +215,8 @@ class Table:
         self.data.close()
         self.primary_key_hash_map.close()
 
-        os.remove(self.table_name + ".db")
-        os.remove(self.table_name + "_primary_key.db")
+        os.remove(self.table_name + ".db.db")
+        os.remove(self.table_name + "_primary_key.db.db")
 
     def add_record(self, record):
 
@@ -319,16 +311,42 @@ class Table:
 
     def remove_where(self, where):
         for x in self._select_filter(where):
+    
             self.remove_record(x)
-
+    
+    def delete_record(self, where=None):
+        for record in self._select_filter(where):
+            hash = self.tuple_hasher(list(record))
+            indices = []
+            for prime in self.primary_key:
+                indices.append([x.attribute_name for x in self.columns].index(prime))
+            record_list = []
+            for index in indices:
+                record_list.append(record[index])
+            hash2 = self.tuple_hasher(tuple(record_list))
+    
+            print(hash)
+            if hash in self.data:
+                print("here")
+                del self.data[hash]
+                del self.primary_key_hash_map[hash2]
+            else:
+                raise Exception("Cannot delete non existent record.")
+    
+            self.size -= 1
+        
+        
+        
+        
     def update_record(self, columns_to_be_updated, values_to_be_updated, where=None):
 
         # column_names = [x.attribute_name for x in self.columns]
-
+        
         indices = []
         for column in columns_to_be_updated:
+           
             indices.append([x.attribute_name for x in self.columns].index(column))
-
+            print(column)
         for record in self._select_filter(where):
 
             record = list(record)
@@ -351,18 +369,24 @@ class Table:
             hash.update(str(element).encode())
         return hash.hexdigest()
 
-    def create_index(self, attribute_name):
+    def create_index(self,attribute_name):
         try:
             record_pos = [column.attribute_name for column in self.columns].index(attribute_name)
             self.indices.append(Index(attribute_name, record_pos, self.data))
+            #print(self.indices)
         except:
             print("ERROR: Attribute does not exist. Cannot create index.")
 
-    def drop_index(self, column_name):
+    def drop_index(self,attribute_name):
 
         try:
-            index = [x.attribute_name for x in self.indices].index(column_name)
-            del self.indices[index]
+            for i,index in enumerate(self.indices):
+                if (index.attribute_name == attribute_name):
+                    idx=i;
+            del self.indices[idx]
+            #print('Deleted!')
+            #print(index)
+            #print(self.indices)
         except:
             raise Exception("Cannot drop non existent index.")
 
@@ -767,102 +791,38 @@ class Index:
 
 #------------------------------------------------------
 # PROGRAM STARTS HERE
-#
-# columns = ["ID", "Name", "Age"]
-# column_mapping = {"ID": "VARCHAR", "Name": "VARCHAR", "Age": "int"}
-# emp1 = ["0001", "Brandon", 25]
-# emp2 = ("0002", "Michael", 40)
-# emp3 = ("0003", "Matthew", 25)
 
-#-------------------------------------------------------
-# t = Table("Employees", column_mapping, ["ID"])
-#
+# columns = ['id']
+# column_mapping = {"id": "INT", "case_qty": "INT", "school": "VARCHAR"}
+# emp1 = [1,10,'Greensboro Elementary School']
+# emp2 = [2,4,'Archbishiop Neale School']
+# emp3 = [3,3,'Brunswick Middle School']
+
+# #-------------------------------------------------------
+# t = Table("school_outbreak", column_mapping, ["id"])
+
 # # print(t.tuple_hasher(emp1))
 # # print(t.tuple_hasher(emp1))
-#
-#
-# # t.add_record(emp1)
-# # t.add_record(emp2)
-# # t.add_record(emp3)
-# #
-# # for x in t._select():
-# #     print(x)
-# # #
-# # t.remove_record(emp1)
-# #
-# # for x in t._select():
-# #     print(x)
-#
-#
-#
-# where = [{"symbol": "<", "column": "Age", "condition": 60}]
-#
-# # for x in t._select(where):
-# #     print(x)
-#
-#
-# t.update_record(["Age"], [20], where)
-#
-# #
-# # where = [{"symbol": "==", "column": "Age", "condition": 30}]
-# #
-# # for x in t._select(where):
-# #     print(x)
-# #
-# for x in t._select():
-#     print(x)
-#
-# print(t.size)
 
-# s = Table.create_from_join(6, 7)
-#-------------------------------------------------------
+
+# t.add_record(emp1)
+# t.add_record(emp2)
+# t.add_record(emp3)
+
+# t.select(columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc")
+
+
+
+
+# joined = Table.create_from_join(left, right, "ID", "ID")
 #
-# where = [{"symbol": "<", "column": "Age", "condition": 40}] #, {"symbol": "==", "column": "Name", "condition": "Brandon"}]
-#
-# left = Table("Employees1", column_mapping, ["ID"])
-# right = Table("Employees2", column_mapping, ["ID"])
-#
-# # left.add_record(emp3)
-# # right.add_record(emp3)
-#
-# for x in left._select_filter():
+# for x in joined._select():
 #     print(x)
-#
-# for x in right._select_filter():
-#     print(x)
-#
-# print("-------------")
-#
-# # for x in left._select_filter(where):
-# #     print(x)
-#
-# # for x in left._select_sort(["Age", "ID"], "asc"):
-# #     print(x)
-#
-# # for x in left._select_filter(where, ["ID"], "desc"):
-# #     print(x)
-#
-# # left.update_record(["Age"], [25], where)
-#
-# aggregates = [("Name", "count"), ("Age", "max")]
-#
-# # left.select(columns, aggregates, ["ID"])
-# left.select(columns, aggregates, ["ID"])
-#
-# #
-# # for x in left._select_filter():
-# #     print(x)
-#
-# # joined = Table.create_from_join(left, right, "ID", "ID")
-# #
-# # for x in joined._select():
-# #     print(x)
-#
-# # Tables[table_name].add_record(sfewfwef)
-#
-#
-# # {table_name: }
-#
-#
-# # tables[table_name].add_record(record)
-#
+
+# Tables[table_name].add_record(sfewfwef)
+
+
+# {table_name: }
+
+
+# tables[table_name].add_record(record)
