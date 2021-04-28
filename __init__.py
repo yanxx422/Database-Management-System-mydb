@@ -9,12 +9,6 @@ tables = {}
 #metadata maps table name to {column names, column types}
 metadata = {}
 
-
-
-def print_this_table(table_name):
-    my_table = tables[table_name]
-    
-    
     
 
 def find_2nd(string, substring):
@@ -356,9 +350,11 @@ class SQLParser:
         if 'WHERE' in re.sub(' +', ' ', arg[1]):
             where_statement = re.sub(' +', ' ', arg[1]).split('WHERE')[1]
             table_name=re.sub(' +', ' ', arg[1]).split('WHERE')[0].strip()
+            print(table_name)
         elif 'where' in re.sub(' +', ' ', arg[1]):
             where_statement = re.sub(' +', ' ', arg[1]).split('where')[1]
             table_name=re.sub(' +', ' ', arg[1]).split('where')[0].strip()
+            
             
         if len(where_statement) != 0:
             if "GROUP BY" in where_statement:
@@ -366,8 +362,7 @@ class SQLParser:
             elif "group by" in where_statement: 
                 where_statement = where_statement.split('group by')[0]
             
-        if len(where_statement) != 0:
-            if "ORDER BY" in where_statement:
+            elif "ORDER BY" in where_statement:
                 where_statement = where_statement.split('ORDER BY')[0]
             elif "order by" in where_statement: 
                 where_statement = where_statement.split('order by')[0]
@@ -375,8 +370,6 @@ class SQLParser:
         
         # Customers.CustomerID > 3 and Customers.CustomerName = "Jenny";         
         # State <> NY 
-        
-        if len(where_statement) != 0:
             where_statement = self.filter_space(where_statement.split(" "))
             #['Customers.CustomerID', '>', '3', 'Customers.CustomerName', '=', '"Jenny";']
             #['State', '<>', 'NY']
@@ -401,6 +394,16 @@ class SQLParser:
             if '.' not in where_statement[0]:
                 for i in range(0, len(where_statement),3):
                     where.append({'symbol': where_statement[i+1], 'column': where_statement[i], 'condition': auto_type(where_statement[i+2])})
+        else:
+            if "GROUP BY" in where_statement:
+                table_name = where_statement.split('GROUP BY')[0].strip()
+            elif "group by" in where_statement: 
+                table_name = where_statement.split('group by')[0].strip()
+            
+            elif "ORDER BY" in where_statement:
+                table_name = where_statement.split('ORDER BY')[0].strip()
+            elif "order by" in where_statement: 
+                table_name = where_statement.split('order by')[0].strip()
                     
         
         # Process join condition, only support joining on one table 
@@ -463,10 +466,8 @@ class SQLParser:
         group_by_statement = ""
         if 'group by' in re.sub(' +', ' ', arg[1]):
             group_by_statement = re.sub(' +', ' ', arg[1]).split('group by')[1]
-            table_name = re.sub(' +', ' ', arg[1]).split('group by')[0].strip()
         elif 'GROUP BY' in re.sub(' +', ' ', arg[1]):
             group_by_statement = re.sub(' +', ' ', arg[1]).split('GROUP BY')[1]
-            table_name = re.sub(' +', ' ', arg[1]).split('GROUP BY')[0].strip()
         if len(group_by_statement) != 0:
             if "ORDER BY" in group_by_statement:
                 group_by_statement = group_by_statement.split('ORDER BY')[0]
@@ -488,10 +489,8 @@ class SQLParser:
         order_by_statement = ""
         if 'order by' in re.sub(' +', ' ', arg[1]):
             order_by_statement = re.sub(' +', ' ', arg[1]).split('order by')[1]
-            table_name = re.sub(' +', ' ', arg[1]).split('order by')[0].strip()
         elif 'ORDER BY' in re.sub(' +', ' ', arg[1]):
             order_by_statement = re.sub(' +', ' ', arg[1]).split('ORDER BY')[1]
-            table_name = re.sub(' +', ' ', arg[1]).split('ORDER BY')[0].strip()
         
         #print(order_by_statement)  
         
@@ -621,8 +620,8 @@ class SQLParser:
         else: # join
             for i,tup in enumerate(columns):
                 columns[i]=tup[0]+'.'+tup[1]
-            for i,tup in enumerate(join):
-                join[i]=(tup[0]+'.'+tup[1])
+            # for i,tup in enumerate(join):
+            #     join[i]=(tup[0]+'.'+tup[1])
             if order_by==[]:
                 order_by=None
                 direct='asc'
@@ -651,20 +650,23 @@ class SQLParser:
             else:
                 group_by=[group_by[0][0]+'.'+group_by[0][1]]
             
+        
+        # process join
+        if join == None:
+            tables[table_name].select(columns, aggregated_columns, group_by,where, order_by,direct)
+        
+        else:
+            print (join)
+            
+            print(join[0][0])
+            print(join[1][1])
+            Table.create_from_join(tables[join[1][0]],tables[join[1][0]],join[0][1], join[1][1]).select(columns, aggregated_columns, group_by,where, order_by,direct)
             
             
             
         
-            
-        print(table_name)
 
-        print(columns)
-        print(aggregated_columns)
-        print(group_by)
-        print(where)
-        print(order_by)
-        print(direct)
-        tables[table_name].select(columns, aggregated_columns, group_by,where, order_by,direct)
+        
 
                    
 
@@ -704,9 +706,9 @@ class SQLParser:
                 columns_to_be_updated.append(new_ret[0][0])
                 values_to_be_updated.append(auto_type(new_ret[0][2]))
             
-            print(table_name)
-            print(columns_to_be_updated)
-            print(values_to_be_updated)
+            # print(table_name)
+            # print(columns_to_be_updated)
+            # print(values_to_be_updated)
             
             #my_table = tables[table_name]
             #my_table.update_record(columns_to_be_updated,values_to_be_updated)
@@ -929,16 +931,7 @@ def load_metadata():
 
 if __name__ == "__main__":
 
-    # load metadata from json file
-    
-    #metadata = json.load("metadata.json")
 
-    # iterate over the keys of the metadata and instantiate table objects which can be added to the list
-    #for key in metadata:
-        #tables[key] = (Table(key, metadata[key][0], metadata[key][1]))
-    
-    #
-    
     load_metadata()
     Runner().cmdloop()
     
@@ -946,14 +939,3 @@ if __name__ == "__main__":
     
 
 
-    # ---- overwrite with new metadata ----
-
-    # clear metadata to update with current state from tables list
-    #metadata.clear()
-
-    # iterate over the keys in the tables dict and store new metadata records
-    #for key in tables:
-        #metadata[key] = [tables[key].column_mapping, tables[key].primary_key]
-
-    # Overwrite old metadata file with new metadata dict ------------------
-    #json.dumps(metadata, "metadata.json")

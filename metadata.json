@@ -1,1 +1,1 @@
-{"accounts": ["accounts", {"ID": "int", "name": "varchar", "website": "varchar", "sales_rep_id": "int"}, ["ID"]], "school_outbreak": ["school_outbreak", {"id": "int", "case_qty": "int", "school": "varchar"}, ["id"]], "gender_outbreak": ["gender_outbreak", {"id": "int", "case_qty": "int", "gender_id": "int"}, ["id"]]}
+{"Rel-i-i-100000": ["Rel-i-i-100000", {"left": "int", "right": "int"}, ["left"]], "Rel-i-i-10000": ["Rel-i-i-10000", {"left": "int", "right": "int"}, ["left"]], "Rel-i-i-1000": ["Rel-i-i-1000", {"left": "int", "right": "int"}, ["left"]]}

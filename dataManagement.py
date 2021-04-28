@@ -125,6 +125,8 @@ class Table:
         smaller_column_of_join = leftColumnOfJoin
         larger_table = right_table
         larger_column_of_join = rightColumnOfJoin
+        
+        print(larger_column_of_join)
 
         if left_table.size > right_table.size:
             smaller_table = right_table
@@ -438,7 +440,7 @@ class Table:
 
     def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc"):
 
-        print(aggregates)
+  
         if aggregates is not None:
 
             order_by_cols = []
