@@ -294,6 +294,7 @@ class SQLParser:
         
         # table_name = re.sub(' +', ' ', arg[1]).strip()[:re.sub(' +', ' ', arg[1]).strip().find(" ")]
         table_name = re.sub(' +', ' ', arg[1]).strip()
+        
 
         #Remove extra space 
         select_from = re.sub(' +', ' ', arg[0]).strip()
@@ -354,8 +355,10 @@ class SQLParser:
         where_statement= ""
         if 'WHERE' in re.sub(' +', ' ', arg[1]):
             where_statement = re.sub(' +', ' ', arg[1]).split('WHERE')[1]
+            table_name=re.sub(' +', ' ', arg[1]).split('WHERE')[0].strip()
         elif 'where' in re.sub(' +', ' ', arg[1]):
             where_statement = re.sub(' +', ' ', arg[1]).split('where')[1]
+            table_name=re.sub(' +', ' ', arg[1]).split('where')[0].strip()
             
         if len(where_statement) != 0:
             if "GROUP BY" in where_statement:
@@ -460,9 +463,10 @@ class SQLParser:
         group_by_statement = ""
         if 'group by' in re.sub(' +', ' ', arg[1]):
             group_by_statement = re.sub(' +', ' ', arg[1]).split('group by')[1]
+            table_name = re.sub(' +', ' ', arg[1]).split('group by')[0].strip()
         elif 'GROUP BY' in re.sub(' +', ' ', arg[1]):
             group_by_statement = re.sub(' +', ' ', arg[1]).split('GROUP BY')[1]
-        
+            table_name = re.sub(' +', ' ', arg[1]).split('GROUP BY')[0].strip()
         if len(group_by_statement) != 0:
             if "ORDER BY" in group_by_statement:
                 group_by_statement = group_by_statement.split('ORDER BY')[0]
@@ -484,8 +488,10 @@ class SQLParser:
         order_by_statement = ""
         if 'order by' in re.sub(' +', ' ', arg[1]):
             order_by_statement = re.sub(' +', ' ', arg[1]).split('order by')[1]
+            table_name = re.sub(' +', ' ', arg[1]).split('order by')[0].strip()
         elif 'ORDER BY' in re.sub(' +', ' ', arg[1]):
             order_by_statement = re.sub(' +', ' ', arg[1]).split('ORDER BY')[1]
+            table_name = re.sub(' +', ' ', arg[1]).split('ORDER BY')[0].strip()
         
         #print(order_by_statement)  
         
@@ -583,12 +589,11 @@ class SQLParser:
         
         
         for element in columns:
-            if element =="*":
-                tables[table_name].select()
+            if element == "*":
+                tables[table_name].select(['*'])
                 return 
    
-        for i,tup in enumerate(columns):
-            columns[i]=tup[0]+'.'+tup[1]
+        
         if join==[]: # no join
             join=None
             if order_by==[]:
@@ -610,10 +615,12 @@ class SQLParser:
             else:
                 group_by=[group_by[0][0]+'.'+group_by[0][1]]
             if where==[]:
-                where==None
+                where=None
                 
                        
         else: # join
+            for i,tup in enumerate(columns):
+                columns[i]=tup[0]+'.'+tup[1]
             for i,tup in enumerate(join):
                 join[i]=(tup[0]+'.'+tup[1])
             if order_by==[]:
@@ -632,7 +639,7 @@ class SQLParser:
                 for i,tup in enumerate(aggregated_columns):
                     aggregated_columns[i]=(tup[1]+'.'+tup[2],tup[0])
             if where==[]:
-                where==None
+                where=None
             else:
                 for i,dict in enumerate(where):
                     where[i]['column']=dict['table']+'.'+dict['column']
@@ -649,21 +656,20 @@ class SQLParser:
             
         
             
-
+        print(table_name)
 
         print(columns)
         print(aggregated_columns)
-        print(where)
-        print(join)
         print(group_by)
+        print(where)
         print(order_by)
         print(direct)
-        #tables[table_name].select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc")
+        tables[table_name].select(columns, aggregated_columns, group_by,where, order_by,direct)
 
                    
 
     
-    # UPDATE Customers SET ContactName='Juan';
+   # UPDATE Customers SET ContactName='Juan';
     # UPDATE Customers SET ContactName='Alfred Schmidt', City='Frankfurt' WHERE CustomerID = 1;
     def update(self,arg: str):
         
@@ -747,20 +753,7 @@ class SQLParser:
               
                 columns_to_be_updated.append(new_ret[0][0])
                 values_to_be_updated.append(new_ret[0][2])
-            
-            #accounts
-            print(table_name)
-            
-            print(where)
-            
-            #['name']
-            print(columns_to_be_updated)
-            
-            #['Apple']
-            print(values_to_be_updated)
-            
-            #where = [{"symbol": "==", "column": "Age", "condition": 30}]
-            #v t.update_record(["Age"], [20], where)
+
            
             tables[table_name].update_record(columns_to_be_updated,values_to_be_updated,where)
          
@@ -888,7 +881,7 @@ class Runner(Cmd):
             print(e)       
         
 
-    def do_exit(self,arg:str):
+    def do_quit(self,arg:str):
         print("See you.")
         return True
 
@@ -922,8 +915,7 @@ def load_metadata():
                 
                 metadata[key] =[key,value[1],value[2]]
                 
-                print(tables)
-                print(metadata)
+
         
         
         

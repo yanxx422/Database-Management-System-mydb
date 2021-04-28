@@ -1,16 +1,21 @@
 
 
 '''
+
 CLASSES:
 Table
 Column
 Index
+
+
 '''
 
 
 '''
 Column_mapping
+
 {attribute: data_type, ...}
+
 '''
 
 
@@ -18,7 +23,7 @@ import shelve
 #from blist import sorteddict
 import hashlib
 import os
-
+from prettytable import PrettyTable
 from enum import Enum
 
 
@@ -39,7 +44,6 @@ TYPE_MAP = {
 }
 
 
-
 class Table:
 
     def __init__(self, table_name, column_mapping, primary_key):
@@ -48,7 +52,6 @@ class Table:
         if len(primary_key) < 1:
             raise Exception("You must specify the primary key column.")
 
-        # Check if column_types are valid
         # Check if column_types are valid
         for key, value in column_mapping.items():
             if not (value in ColumnType.__members__):
@@ -69,35 +72,11 @@ class Table:
         if not any(elem in primary_key for elem in column_mapping.keys()):
             raise Exception("primary_key '%s' does not exist." % primary_key)
 
-        # # check if user has provided valid primary key list
-        # if len(primary_key) < 1:
-        #     raise Exception("You must specify the primary key column.")
-        #
-        # # Check if column_types are valid
-        # for key in column_mapping:
-        #     if column_mapping[key] is not int and column_mapping[key] is not float and column_mapping[key] is not str:
-        #         raise TypeError('Data type is not valid')
-        #
-        # # for i in range(len(column_names)):
-        # #     if not (column_types[i] in ColumnType.__members__):
-        # #         raise TypeError('Data type is not valid')
-        #
-        # # Check if column names are unique:
-        # if len(set(column_mapping.keys())) != len(column_mapping.keys()):
-        #     raise Exception("Can't have duplicate column names.")
-        #
-        # # if len(set(column_names)) != len(column_names):
-        # #     raise Exception("Can't have duplicate column names.")
-        #
-        # # check that primary key columns are actually columns of the table
-        # if not any(elem in primary_key for elem in column_mapping.keys()):
-        #     raise Exception("primary_key '%s' does not exist." % primary_key)
-        #
-        # # # check if table name exists
-        # # for key, value in tables.items():
-        # #     if table_name == key:
-        # #         raise Exception("Can't have duplicate column names.")
-        #
+        # # check if table name exists
+        # for key, value in tables.items():
+        #     if table_name == key:
+        #         raise Exception("Can't have duplicate column names.")
+
 
         self.table_name = table_name
         self.column_mapping = column_mapping
@@ -215,11 +194,10 @@ class Table:
         self.data.close()
         self.primary_key_hash_map.close()
 
-        os.remove(self.table_name + ".db.db")
-        os.remove(self.table_name + "_primary_key.db.db")
+        os.remove(self.table_name + ".db")
+        os.remove(self.table_name + "_primary_key.db")
 
     def add_record(self, record):
-
         # --- check if record is legal
         # --------- check if lengths match
         if len(record) != len(self.columns):
@@ -228,6 +206,7 @@ class Table:
         for element, column in zip(record, self.columns):
             if not isinstance(element, TYPE_MAP[column.data_type]):
                 raise TypeError('data type error, value must be %s' % column.data_type)
+
         # check if record already exists
         hash = self.tuple_hasher(record)
         if hash in self.data:
@@ -253,40 +232,6 @@ class Table:
 
         self.size += 1
 
-        # # --- check if record is legal
-        # # --------- check if lengths match
-        # if len(record) != len(self.columns):
-        #     raise Exception("Number of columns in record does not match number of columns in table.")
-        # # --------- check if data_types match
-        # for element, column in zip(record, self.columns):
-        #     if not isinstance(element, column.data_type):
-        #         raise Exception("Data_type of record attribute: " + column.attribute_name + " is invalid.")
-        #
-        # # check if record already exists
-        # hash = self.tuple_hasher(record)
-        # if hash in self.data:
-        #     raise Exception("Record already in Table. Cannot have duplicate record.")
-        #
-        # # check if record has unique primary key
-        # indices = []
-        # for prime in self.primary_key:
-        #     indices.append([x.attribute_name for x in self.columns].index(prime))
-        # record_list = []
-        # for index in indices:
-        #     record_list.append(record[index])
-        # hash2 = self.tuple_hasher(tuple(record_list))
-        #
-        # if hash2 in self.primary_key_hash_map:
-        #     raise Exception("Primary key violation. New record does not have unique primary key.")
-        # else:
-        #     self.primary_key_hash_map[hash2] = 1
-        #
-        # # add the record to the hash map self.data
-        # self.data[hash] = record
-        # # print(hash)
-        #
-        # self.size += 1
-
     def remove_record(self, record):
         # check if record is present
         hash = self.tuple_hasher(record)
@@ -299,9 +244,9 @@ class Table:
             record_list.append(record[index])
         hash2 = self.tuple_hasher(tuple(record_list))
 
-        print(hash)
+        # print(hash)
         if hash in self.data:
-            print("here")
+            # print("here")
             del self.data[hash]
             del self.primary_key_hash_map[hash2]
         else:
@@ -311,7 +256,6 @@ class Table:
 
     def remove_where(self, where):
         for x in self._select_filter(where):
-    
             self.remove_record(x)
     
     def delete_record(self, where=None):
@@ -494,15 +438,15 @@ class Table:
 
     def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc"):
 
-        # this is the function were the code lost its structure completely
+        print(aggregates)
         if aggregates is not None:
 
             order_by_cols = []
             for ag in aggregates:
-                print(ag[0])
+                # print(ag[0])
                 order_by_cols.append(ag[0])
 
-            print(order_by_cols)
+            # print(order_by_cols)
             # order_by = order_by_cols
 
             toPrint = []
@@ -530,7 +474,7 @@ class Table:
             index_to_var = {}
             for index in index_to_aggregate_function:
                 index_to_var[index] = "a"
-
+                
             if group_by is not None:
                 change = False
 
@@ -543,11 +487,14 @@ class Table:
                 group_by_index_mapping = {}
                 for index in group_by_column_indices:
                     group_by_index_mapping[index] = 0
+                 
 
                 hashPrior = self.tuple_hasher(group_by_index_mapping.values())
                 hashCurrent = self.tuple_hasher(group_by_index_mapping.values())
 
                 for record in self._select_filter(where, order_by_cols, direction):
+                    
+                    
                     for index in index_to_var:
                         index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
 
@@ -591,9 +538,29 @@ class Table:
             for result in list_of_results:
                 print(result)
         else:
+            pt = PrettyTable()
+            
+            
+            #Check the column mapping 
+            if columns==['*']:
+                idx=range(len(self.columns))
+                pt.field_names = [col.attribute_name for col in self.columns]
+            else:   
+                idx=[]
+                pt.field_names = columns
+                for idex, col in enumerate(self.columns):
+                    for colnm in columns:
+                        if colnm in col.attribute_name:
+                            idx.append(idex)
+                                       
+            
+            
 
             for x in self._select_filter(where, order_by, direction):
-                print(x)
+                #print(x)
+                pt.add_row([x[i] for i in idx])
+                
+            print(pt)
 
 
     def _filter(self, record, where):
@@ -611,12 +578,12 @@ class Table:
             else:
                 return False
         elif operator == "<":
-            if str(record[column_index]) < condition:
+            if int(record[column_index]) < int(condition):
                 return True
             else:
                 return False
         elif operator == ">":
-            if str(record[column_index]) > condition:
+            if int(record[column_index]) > int(condition):
                 return True
             else:
                 return False
@@ -640,16 +607,16 @@ class Table:
             # it does not make sense to make this unique combination of wheres into an index
             if len(where) > 1:
                 for x in self._select_filter(where[1:]):
-                    print("--->", where[0])
+                    # print("--->", where[0])
                     if self._filter(x, where[0]):
                         yield x
                 return
             else:
-                print(where)
+                # print(where)
                 operator = where[0]["symbol"]
                 column = where[0]["column"]
                 condition = str(where[0]["condition"])
-                print(column)
+                # print(column)
 
                 # if the index does not exit, create it
                 if column not in [y.attribute_name for y in self.indices]:
@@ -666,8 +633,11 @@ class Table:
                         pass
                 elif operator == "<":
                     try:
+                        # print("---------->", len(self.indices[indices_index].data))
                         for key in self.indices[indices_index].data:
-                            if key < condition:
+                            # print(int(key), int(condition), int(key) < int(condition))
+                            if int(key) < int(condition):
+                                # print("here", key)
                                 for x in self.indices[indices_index].data[key]:
                                     yield self.data[x]
                     except:
@@ -675,7 +645,7 @@ class Table:
                 elif operator == ">":
                     try:
                         for key in self.indices[indices_index].data:
-                            if key > condition:
+                            if int(key) > int(condition):
                                 for x in self.indices[indices_index].data[key]:
                                     yield self.data[x]
                     except:
@@ -745,9 +715,9 @@ class Table:
 
         try:
             for record in records:
-                print("heree", record[column_index], index.keys())
+                # print("heree", record[column_index], index.keys())
                 if str(record[column_index]) in index:
-                    print("heree", record[column_index])
+                    # print("heree", record[column_index])
                     index[str(record[column_index])].append(self.tuple_hasher(record))
                 else:
                     index[str(record[column_index])] = [self.tuple_hasher(record)]
@@ -792,31 +762,103 @@ class Index:
 #------------------------------------------------------
 # PROGRAM STARTS HERE
 
-# columns = ['id']
-# column_mapping = {"id": "INT", "case_qty": "INT", "school": "VARCHAR"}
-# emp1 = [1,10,'Greensboro Elementary School']
-# emp2 = [2,4,'Archbishiop Neale School']
-# emp3 = [3,3,'Brunswick Middle School']
+# columns = ["ID", "Name", "Age"]
+# column_mapping = {"ID": "varchar", "Name": "varchar", "Age": "int"}
+# emp1 = ["0001", "Brandon", 25]
+# emp2 = ("0002", "Michael", 40)
+# emp3 = ("0003", "Matthew", 25)
+# emp4 = ("0004", "Macy", 30)
 
 # #-------------------------------------------------------
-# t = Table("school_outbreak", column_mapping, ["id"])
+# t = Table("Employees", column_mapping, ["ID"])
 
 # # print(t.tuple_hasher(emp1))
 # # print(t.tuple_hasher(emp1))
 
 
-# t.add_record(emp1)
-# t.add_record(emp2)
-# t.add_record(emp3)
+# # t.add_record(emp1)
+# # t.add_record(emp2)
+# # t.add_record(emp3)
+# #t.add_record(emp4)
 
-# t.select(columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc")
+# t.select(columns = ["Name"] , where = [{'symbol': '>', 'column': 'Age', 'condition': 25}])
 
-
-
-
-# joined = Table.create_from_join(left, right, "ID", "ID")
+# t.select(columns = ["*"] )
+# t.select(columns = ["Age","Name"] , aggregates = [("Age","max")],where = [{'symbol': '>', 'column': 'Age', 'condition': 25}])
+# #
+# # for x in t._select():
+# #     print(x)
+# # #
+# # t.remove_record(emp1)
+# #
+# # for x in t._select():
+# #     print(x)
 #
-# for x in joined._select():
+#
+#
+# where = [{"symbol": "<", "column": "Age", "condition": 60}]
+#
+# # for x in t._select(where):
+# #     print(x)
+#
+#
+# t.update_record(["Age"], [20], where)
+#
+# #
+# # where = [{"symbol": "==", "column": "Age", "condition": 30}]
+# #
+# # for x in t._select(where):
+# #     print(x)
+# #
+# for x in t._select():
+#     print(x)
+#
+# print(t.size)
+
+# s = Table.create_from_join(6, 7)
+#-------------------------------------------------------
+#
+# where = [{"symbol": "<", "column": "Age", "condition": 40}] #, {"symbol": "==", "column": "Name", "condition": "Brandon"}]
+#
+# left = Table("Employees1", column_mapping, ["ID"])
+# right = Table("Employees2", column_mapping, ["ID"])
+#
+# # left.add_record(emp3)
+# # right.add_record(emp3)
+#
+# for x in left._select_filter():
+#     print(x)
+#
+# for x in right._select_filter():
+#     print(x)
+#
+# print("-------------")
+
+# for x in left._select_filter(where):
+#     print(x)
+
+# for x in left._select_sort(["Age", "ID"], "asc"):
+#     print(x)
+
+# for x in left._select_filter(where, ["ID"], "desc"):
+#     print(x)
+
+# left.update_record(["Age"], [25], where)
+#
+# aggregates = [("Name", "count"), ("Age", "max")]
+#
+# # left.select(columns, aggregates, ["ID"])
+# left.select(columns, aggregates, ["ID"])
+# left.select(columns, aggregates)
+
+#
+# #
+# for x in left._select_filter():
+#     print(x)
+#
+# # joined = Table.create_from_join(left, right, "ID", "ID")
+# #
+# # for x in joined._select():
 #     print(x)
 
 # Tables[table_name].add_record(sfewfwef)
@@ -826,3 +868,17 @@ class Index:
 
 
 # tables[table_name].add_record(record)
+# emp1 = ["0001", "Brandon", 25]
+
+
+
+
+
+
+
+################################################################################################
+################################################################################################
+################################################################################################
+
+# #### CREATING THE TABLES ####
+
