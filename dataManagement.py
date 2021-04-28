@@ -25,7 +25,7 @@ import hashlib
 import os
 from prettytable import PrettyTable
 from enum import Enum
-
+import re
 
 class ColumnType(Enum):
     INT = int = 'int'
@@ -42,6 +42,21 @@ TYPE_MAP = {
     'VARCHAR': str,
     'varchar': str
 }
+
+
+def auto_type(value: str):
+    
+    
+    if value[0] == "'" and value[-1] == "'":
+        value = value[1:-1]
+    elif re.match(r'^-?[0-9]+\.+[0-9]+$', value):
+        value = float(value)
+    elif re.match(r'^-?[0-9]+', value):
+        value = int(value)
+    else:
+        pass
+        
+    return value
 
 
 class Table:
@@ -196,8 +211,8 @@ class Table:
         self.data.close()
         self.primary_key_hash_map.close()
 
-        os.remove(self.table_name + ".db")
-        os.remove(self.table_name + "_primary_key.db")
+        os.remove(self.table_name + ".db.db")
+        os.remove(self.table_name + "_primary_key.db.db")
 
     def add_record(self, record):
         # --- check if record is legal
@@ -262,6 +277,7 @@ class Table:
     
     def delete_record(self, where=None):
         for record in self._select_filter(where):
+            
             hash = self.tuple_hasher(list(record))
             indices = []
             for prime in self.primary_key:
@@ -271,9 +287,9 @@ class Table:
                 record_list.append(record[index])
             hash2 = self.tuple_hasher(tuple(record_list))
     
-            print(hash)
+     
             if hash in self.data:
-                print("here")
+     
                 del self.data[hash]
                 del self.primary_key_hash_map[hash2]
             else:
@@ -292,21 +308,22 @@ class Table:
         for column in columns_to_be_updated:
            
             indices.append([x.attribute_name for x in self.columns].index(column))
-            print(column)
         for record in self._select_filter(where):
+            
+            print(record)
 
             record = list(record)
-            # print(record)
-            # remove the record in the data
-            self.remove_record(record)
+            self.delete_record(where)
 
             # modify the record
             i = 0
             for index in indices:
                 record[index] = values_to_be_updated[i]
                 i += 1
-
+            
+            
             # insert
+            print(tuple(record))
             self.add_record(tuple(record))
 
     def tuple_hasher(self, record):
@@ -314,7 +331,6 @@ class Table:
         for element in record:
             hash.update(str(element).encode())
         return hash.hexdigest()
-
     def create_index(self,attribute_name):
         try:
             record_pos = [column.attribute_name for column in self.columns].index(attribute_name)
@@ -438,7 +454,7 @@ class Table:
                 return current
 
 
-    def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="desc"):
+    def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="asc"):
 
   
         if aggregates is not None:
@@ -455,20 +471,26 @@ class Table:
             column_indices = []
             # get column indices
             for column in columns:
+             
                 column_indices.append([x.attribute_name for x in self.columns].index(column))
-
+                
+      
             # get mapping from index to column
             index_to_columns = {}
             column_to_index = {}
             i = 0
             for index in column_indices:
                 index_to_columns[index] = columns[i]
+             
                 column_to_index[columns[i]] = index
                 i += 1
+            
+   
 
             # get mapping from index to aggregate function
             index_to_aggregate_function = {}
             for aggregate in aggregates:
+      
                 index_to_aggregate_function[column_to_index[aggregate[0]]] = aggregate[1]
 
             list_of_results = []
@@ -532,13 +554,32 @@ class Table:
                 # for record in self._select_filter(where, order_by, direction):
                 #     for index in index_to_var:
                 #         index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
-
+                
+            pt = PrettyTable()
+            
             names = []
             for name in aggregates:
+                
+                
                 names.append(name[1] + "(" + name[0] + ")")
             print(names)
+            
+            pt.fied_names = names
+
+            
+        
+            values = []
             for result in list_of_results:
-                print(result)
+                for i, (k,v) in enumerate(result.items()):
+                    
+                    values.append(v)
+                    
+
+            
+            pt.add_row(values)
+            
+            print(pt)
+            
         else:
             pt = PrettyTable()
             
@@ -595,7 +636,7 @@ class Table:
             else:
                 return False
 
-    def _select_filter(self, where=None, order_by=None, direction="desc"):
+    def _select_filter(self, where=None, order_by=None, direction="asc"):
 
         # if there are no such conditions, simply yield one record at a time
         if where is None and order_by is None:
@@ -669,14 +710,15 @@ class Table:
                 return
 
 
-    def _select_sort(self, order_by, direction="desc"):
+    def _select_sort(self, order_by, direction="asc"):
 
         if len(order_by) > 1:
             newIndex = self._create_index_from_generator(self._select_sort(order_by[1:], direction), order_by[0])
             keys = list(newIndex.keys())
 
+    
             if direction == "asc":
-                keys.sort()
+                keys.sort(key = int)
             elif direction == "desc":
                 keys.sort(reverse=True)
 
@@ -694,12 +736,13 @@ class Table:
 
             index_pos = [x.attribute_name for x in self.indices].index(column)
 
-            keys = list(self.indices[index_pos].data.keys())
+            keys = list((self.indices[index_pos].data.keys()))
+            
 
             if direction == "asc":
-                keys.sort()
+                keys.sort(key = int)
             elif direction == "desc":
-                keys.sort(reverse=True)
+                keys.sort(key = int,reverse=True)
 
             for key in keys:
                 for record in self.indices[index_pos].data[key]:

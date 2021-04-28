@@ -57,6 +57,7 @@ class SQLParser:
             table_name = arg[:arg.find('(')].strip()  
             if table_name == '':
                 raise Exception("Table name is empty")
+                
            
             
             arg = arg[arg.find('('):]
@@ -163,6 +164,8 @@ class SQLParser:
         
             
             #TO DO: pass table_name to somewhere!!
+            
+            print(table_name)
             tables[table_name].drop_table()
             del tables[table_name]
             del metadata[table_name]
@@ -258,7 +261,7 @@ class SQLParser:
                     raise Exception(f"no operator found in {condition}")
                 r_op = auto_type(r_op)
                 where.append({'symbol': operator, 'column': l_op, 'condition': r_op})
-            print(where)
+            #print(where)
             #print(table_name)    
             tables[table_name].delete_record(where)
 
@@ -289,6 +292,26 @@ class SQLParser:
         # table_name = re.sub(' +', ' ', arg[1]).strip()[:re.sub(' +', ' ', arg[1]).strip().find(" ")]
         table_name = re.sub(' +', ' ', arg[1]).strip()
         
+        
+        
+        
+        position = table_name.find("order by")
+        if position == -1:
+            position_upper = table_name.find("ORDER BY")
+            if position_upper == -1:
+                pass
+            else:
+                table_name = table_name[:position_upper].strip()
+        
+        else:
+            table_name = table_name[:position].strip()
+            
+            
+            
+        
+            
+            
+            
 
         #Remove extra space 
         select_from = re.sub(' +', ' ', arg[0]).strip()
@@ -404,6 +427,7 @@ class SQLParser:
                 table_name = where_statement.split('ORDER BY')[0].strip()
             elif "order by" in where_statement: 
                 table_name = where_statement.split('order by')[0].strip()
+                print('my table_name: '+table_name )
                     
         
         # Process join condition, only support joining on one table 
@@ -515,6 +539,7 @@ class SQLParser:
                 
                         dot_position = order_by_statement.find(".")
                         table_name = order_by_statement[l+1:dot_position].strip()
+                        print('order: '+table_name)
                         r = order_by_statement.find(")")
                         column_name =  order_by_statement[dot_position+1:r].strip()
                         aggregated_order_by.append(("desc",func,table_name,column_name))
@@ -537,6 +562,7 @@ class SQLParser:
                     if "." in order_by_statement:
                         dot_position = order_by_statement.find(".")
                         table_name = order_by_statement[:dot_position].strip()
+                        print('. : '+table_name)
                         column_name =  order_by_statement[dot_position+1:].strip()
                         order_by.append(("desc",table_name,column_name))
             
@@ -556,6 +582,7 @@ class SQLParser:
                 
                         dot_position = order_by_statement.find(".")
                         table_name = order_by_statement[l+1:dot_position].strip()
+                        print('(. order: '+table_name)
                         r = order_by_statement.find(")")
                         column_name =  order_by_statement[dot_position+1:r].strip()
                         aggregated_order_by.append(("asc",func,table_name,column_name))
@@ -577,6 +604,7 @@ class SQLParser:
                     if "." in order_by_statement:
                         dot_position = order_by_statement.find(".")
                         table_name = order_by_statement[:dot_position].strip()
+                        print('. order: '+table_name)
                         column_name =  order_by_statement[dot_position+1:].strip()
                         order_by.append(("asc",table_name,column_name))
             
@@ -651,9 +679,19 @@ class SQLParser:
                 group_by=[group_by[0][0]+'.'+group_by[0][1]]
             
         
+
         # process join
         if join == None:
+        
+            
+            if aggregated_columns:
+                for element in aggregated_columns:
+                    columns.append(element[0])
+                    
+            
             tables[table_name].select(columns, aggregated_columns, group_by,where, order_by,direct)
+                
+
         
         else:
             print (join)
@@ -754,9 +792,9 @@ class SQLParser:
                 new_ret = comp.findall(column_specification)
               
                 columns_to_be_updated.append(new_ret[0][0])
-                values_to_be_updated.append(new_ret[0][2])
+                values_to_be_updated.append(auto_type(new_ret[0][2]))
 
-           
+            
             tables[table_name].update_record(columns_to_be_updated,values_to_be_updated,where)
          
         
@@ -801,23 +839,20 @@ class Runner(Cmd):
             print('Creating Failed.', e)    
 
     def do_drop(self,arg:str):
-        try:
-            SQLParser().drop(arg)
-        except Exception as e:
-            print('Dropping Failed.', e)
+        SQLParser().drop(arg)
+    
+  
             
     def do_DROP(self,arg:str):
-        try:
-            SQLParser().drop(arg)
-        except Exception as e:
-            print('Dropping Failed.', e)
+        
+        SQLParser().drop(arg)
+
+       
     
 
     def do_select(self,arg:str):
-        try:
-            SQLParser().select(arg)
-        except Exception as e:
-            print('Selecting Failed.', e)
+        SQLParser().select(arg)
+
             
     def do_SELECT(self,arg:str):
         try:
