@@ -35,4 +35,12 @@ select case_qty from gender_outbreak where id = 6;
 select * from gender_outbreak WHERE id <> 4 ORDER BY case_qty;
 UPDATE gender_outbreak SET case_qty = 32 WHERE id = 4;
 DELETE FROM gender_outbreak WHERE case_qty = 22 AND id > 10;
+
+CREATE INDEX on gender_outbreak (gender_id);
+
+SELECT case_qty, AVG (case_qty) from gender_outbreak where case_qty > 2 ORDER BY case_qty DESC;
+
+
+
+DROP INDEX on gender_outbreak (gender_id);
 DROP table gender_outbreak;
