@@ -217,7 +217,7 @@ class SQLParser:
         
         
         
-    #DELETE FROM Customers WHERE CustomerName = Alfreds Futterkiste AND ID = 4;
+    #DELETE FROM Customers WHERE CustomerName == Alfreds Futterkiste AND ID > 4;
     #DELETE FROM Customers
     def delete(self,arg: str):
         arg = arg.rstrip(';')
@@ -247,22 +247,25 @@ class SQLParser:
             conditions = list(map(str.strip, conditions))
             where = []
             for condition in conditions:
-                operators = ['==', '<>', '<', '>', '<=', '>=']
+                operators = ['==', '<>', '<', '>']
                 no_operator = True
                 for operator in operators:
                     if operator in condition:
                         op = operator
                         location = condition.find(op)
                         l_op = condition[:location].strip()
-                        r_op = condition[location + 1:].strip()
+                        r_op = condition[location + len(op):].strip()
                         no_operator = False
                         break
                 if no_operator:
                     raise Exception(f"no operator found in {condition}")
                 r_op = auto_type(r_op)
-                where.append({'symbol': operator, 'column': l_op, 'condition': r_op})
+                where.append({'symbol': op, 'column': l_op, 'condition': r_op})
             #print(where)
             #print(table_name)    
+            print(where)
+            
+
             tables[table_name].delete_record(where)
 
     def filter_space(self, obj):
@@ -709,8 +712,9 @@ class SQLParser:
                    
 
     
-   # UPDATE Customers SET ContactName='Juan';
-    # UPDATE Customers SET ContactName='Alfred Schmidt', City='Frankfurt' WHERE CustomerID = 1;
+   # UPDATE Customers SET ContactName =='Juan' where City == 'New';
+    # UPDATE Customers SET ContactName ='Alfred Schmidt', City='Frankfurt' WHERE CustomerID == 1 and Name = "das";
+    #UPDATE Customers SET ContactName == 'Juan' where City == 'New' and ID == 3;
     def update(self,arg: str):
         
         arg = arg.rstrip(';')
@@ -734,67 +738,83 @@ class SQLParser:
             ret = comp.findall("".join(arg))      
             table_name = ret[0][0]         
             column_specifications = ret[0][2]
+
+            
             
             for column_specification in column_specifications.split(','):
+
+                         
                 
                 
-                pattern = r'(.*) (=) (.*)'
+                pattern = r'(.*) (==|<|>|<>) (.*)'
                 comp  = re.compile(pattern)
                 new_ret = comp.findall(column_specification)
                 columns_to_be_updated.append(new_ret[0][0])
                 values_to_be_updated.append(auto_type(new_ret[0][2]))
             
-            # print(table_name)
-            # print(columns_to_be_updated)
-            # print(values_to_be_updated)
-            
-            #my_table = tables[table_name]
-            #my_table.update_record(columns_to_be_updated,values_to_be_updated)
-            
-            
-            #TO DO: PASS THESE PARAMETERS TO SOMEWHERE 
+
             tables[table_name].update_record(columns_to_be_updated,values_to_be_updated)
                 
         else:
             table_name = arg[: location_set].strip()
             
             if 'AND' in arg:
-                    
-                conditions = arg[location_where + len('where'):].split('AND')
                 
+                conditions = arg[location_where + len('where'):].strip().split('AND')
             else:
-                conditions = arg[location_where + len('where'):].split('and')
-             
-                
+                conditions = arg[location_where + len('where'):].strip().split('and')
             
             conditions = list(map(str.strip, conditions))
-            #print(conditions)
-            
+
+         
+
+            where = []
             for condition in conditions:
-    
-                pattern = r'(.*) (==) (.*)'
-                comp  = re.compile(pattern)
-                new_ret = comp.findall(condition)
-                #print(new_ret)
-                #where.append({'column_name':new_ret[0][0], 'value':auto_type(new_ret[0][2])})
-                where.append({'symbol':"==",  "column" : new_ret[0][0], 'condition':auto_type(new_ret[0][2])})
+                operators = ['==', '<>', '<', '>']
+                no_operator = True
+                for operator in operators:
+                    if operator in condition:
+                        op = operator
+                        location = condition.find(op)
+                        l_op = condition[:location].strip()
+                        r_op = condition[location + len(op):].strip()
+                        no_operator = False
+                        break
+                if no_operator:
+                    raise Exception(f"no operator found in {condition}")
+
+                r_op = auto_type(r_op)
+
+                where.append({'symbol': op, 'column': l_op, 'condition': r_op})
+                
+
+
+
+
             arg = arg[:location_where]
             pattern = r'(.*) (SET|set) (.*) '
             comp = re.compile(pattern)
             ret = comp.findall("".join(arg))
+
      
             column_specifications = ret[0][2].split(',')
+
+
+
+
+
             
             for column_specification in column_specifications:
+                print(column_specification)
                 
-                pattern = r'(.*) (=) (.*)'
+                pattern = r'(.*) (==) (.*)'
                 comp  = re.compile(pattern)
                 new_ret = comp.findall(column_specification)
+                print(new_ret)
               
                 columns_to_be_updated.append(new_ret[0][0])
                 values_to_be_updated.append(auto_type(new_ret[0][2]))
 
-            
             tables[table_name].update_record(columns_to_be_updated,values_to_be_updated,where)
          
         
