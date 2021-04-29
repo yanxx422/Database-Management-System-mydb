@@ -9,7 +9,11 @@ tables = {}
 #metadata maps table name to {column names, column types}
 metadata = {}
 
-    
+
+def print_all_tables(): 
+
+    for table_name, table_objt in tables.items():
+        tables[table_name].select(['*'])
 
 def find_2nd(string, substring):
     return string.find(substring, string.find(substring) + 1)
@@ -967,7 +971,10 @@ def load_metadata():
 if __name__ == "__main__":
 
 
+
+
     load_metadata()
+    #print_all_tables()
     Runner().cmdloop()
     
     save_metadata()
