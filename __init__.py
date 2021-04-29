@@ -9,11 +9,7 @@ tables = {}
 #metadata maps table name to {column names, column types}
 metadata = {}
 
-
-def print_all_tables(): 
-
-    for table_name, table_objt in tables.items():
-        tables[table_name].select(['*'])
+    
 
 def find_2nd(string, substring):
     return string.find(substring, string.find(substring) + 1)
@@ -776,7 +772,7 @@ class SQLParser:
             
             for condition in conditions:
     
-                pattern = r'(.*) (=) (.*)'
+                pattern = r'(.*) (==) (.*)'
                 comp  = re.compile(pattern)
                 new_ret = comp.findall(condition)
                 #print(new_ret)
@@ -919,8 +915,27 @@ class Runner(Cmd):
                 i += 1
         except Exception as e:
             print(f" An exception occurred at line {i}:")
-            print(e)       
-        
+            print(e)
+
+    def do_LIST(self, arg:str):
+
+        for table in tables:
+            print(tables[table].table_name)
+
+    def do_list(self, arg:str):
+
+        for table in tables:
+            print(tables[table].table_name)
+
+    def do_COLUMNS(self, arg:str):
+        if arg.split(" ")[0].lower() == "from":
+            if arg.split(" ")[1] in tables:
+                tables[arg.split(" ")[1]].show_columns()
+
+    def do_columns(self, arg:str):
+        if arg.split(" ")[0].lower() == "from":
+            if arg.split(" ")[1] in tables:
+                tables[arg.split(" ")[1]].show_columns()
 
     def do_quit(self,arg:str):
         print("See you.")
@@ -971,10 +986,7 @@ def load_metadata():
 if __name__ == "__main__":
 
 
-
-
     load_metadata()
-    #print_all_tables()
     Runner().cmdloop()
     
     save_metadata()

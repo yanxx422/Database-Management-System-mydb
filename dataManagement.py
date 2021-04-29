@@ -207,6 +207,11 @@ class Table:
         #
         # return joinedTable
 
+    def show_columns(self):
+
+        for column in self.columns:
+            print(column.attribute_name)
+
     def drop_table(self):
         self.data.close()
         self.primary_key_hash_map.close()
@@ -310,7 +315,6 @@ class Table:
             indices.append([x.attribute_name for x in self.columns].index(column))
         for record in self._select_filter(where):
             
-            print(record)
 
             record = list(record)
             self.delete_record(where)
@@ -323,7 +327,6 @@ class Table:
             
             
             # insert
-            print(tuple(record))
             self.add_record(tuple(record))
 
     def tuple_hasher(self, record):
