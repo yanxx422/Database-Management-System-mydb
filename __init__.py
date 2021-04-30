@@ -103,7 +103,8 @@ class SQLParser:
             
             # Update metadata
             metadata[table_name] = [table_name,dict(zip(column_names,column_types)),primary_key_column]
-            
+            save_metadata()
+
             # Pass column_names, column_types,primary_key_column, table_name to somewhere 
             myTable = Table(table_name, dict(zip(column_names,column_types)), primary_key_column)
             
@@ -169,6 +170,7 @@ class SQLParser:
             tables[table_name].drop_table()
             del tables[table_name]
             del metadata[table_name]
+            save_metadata()
             
         elif lower_arg[:5] == 'index':
             print(arg[8:])
@@ -308,10 +310,19 @@ class SQLParser:
         
         else:
             table_name = table_name[:position].strip()
-            
-            
-            
-        
+
+
+        # position = table_name.find("group by")
+        # if position == -1:
+        #     position_upper = table_name.find("GROUP BY")
+        #     if position_upper == -1:
+        #         pass
+        #     else:
+        #         table_name = table_name[:position_upper].strip()
+        #
+        # else:
+        #     table_name = table_name[:position].strip()
+        # 
             
             
             
@@ -530,8 +541,13 @@ class SQLParser:
         
         if len(order_by_statement)!= 0:
             
-            if "DESC" in order_by_statement:
-                order_by_statement = order_by_statement.strip("DESC").strip()
+            if "DESC" in order_by_statement or "desc" in order_by_statement:
+
+                if "DESC" in order_by_statement:
+                    order_by_statement = order_by_statement.strip("DESC").strip()
+                elif "desc" in order_by_statement:
+                    order_by_statement = order_by_statement.strip("desc").strip()
+
                 if "(" in order_by_statement:
                     if "." in order_by_statement:
                         l = order_by_statement.find("(")
@@ -620,9 +636,8 @@ class SQLParser:
         
         for element in columns:
             if element == "*":
-                tables[table_name].select(['*'])
-                return 
-   
+                columns = [x.attribute_name for x in tables[table_name].columns]
+
         
         if join==[]: # no join
             join=None
@@ -691,7 +706,8 @@ class SQLParser:
                 for element in aggregated_columns:
                     columns.append(element[0])
                     
-            
+            print(order_by, direct)
+
             tables[table_name].select(columns, aggregated_columns, group_by,where, order_by,direct)
                 
 
@@ -807,7 +823,7 @@ class SQLParser:
             for column_specification in column_specifications:
                 print(column_specification)
                 
-                pattern = r'(.*) (==) (.*)'
+                pattern = r'(.*) (=) (.*)'
                 comp  = re.compile(pattern)
                 new_ret = comp.findall(column_specification)
                 print(new_ret)
@@ -939,20 +955,24 @@ class Runner(Cmd):
 
     def do_LIST(self, arg:str):
 
+        print("Format: Table_Name, Size (ROW * COL)")
         for table in tables:
-            print(tables[table].table_name)
+            print(tables[table].table_name, str(len(tables[table].data)) + " * " + str(len(tables[table].columns)))
 
     def do_list(self, arg:str):
 
+        print("Format: Table_Name, Size (ROW * COL)")
         for table in tables:
-            print(tables[table].table_name)
+            print(tables[table].table_name, str(len(tables[table].data)) + " * " + str(len(tables[table].columns)))
 
     def do_COLUMNS(self, arg:str):
+        print("Format: Column Name, Data Type")
         if arg.split(" ")[0].lower() == "from":
             if arg.split(" ")[1] in tables:
                 tables[arg.split(" ")[1]].show_columns()
 
     def do_columns(self, arg:str):
+        print("Format: Column Name, Data Type")
         if arg.split(" ")[0].lower() == "from":
             if arg.split(" ")[1] in tables:
                 tables[arg.split(" ")[1]].show_columns()
@@ -969,7 +989,7 @@ class Runner(Cmd):
 def save_metadata():
     with open ('metadata.json','w') as metafile:
         
-        #Erase the meta_data_file e
+        #Erase the meta_data_file
         metafile.truncate(0)
         json.dump(metadata, metafile)
         
@@ -1008,8 +1028,6 @@ if __name__ == "__main__":
 
     load_metadata()
     Runner().cmdloop()
-    
-    save_metadata()
-    
+
 
 

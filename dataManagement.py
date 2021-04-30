@@ -210,14 +210,14 @@ class Table:
     def show_columns(self):
 
         for column in self.columns:
-            print(column.attribute_name)
+            print(column.attribute_name, column.data_type)
 
     def drop_table(self):
         self.data.close()
         self.primary_key_hash_map.close()
 
-        os.remove(self.table_name + ".db.db")
-        os.remove(self.table_name + "_primary_key.db.db")
+        os.remove(self.table_name + ".db")
+        os.remove(self.table_name + "_primary_key.db")
 
     def add_record(self, record):
         # --- check if record is legal
@@ -334,8 +334,10 @@ class Table:
         for element in record:
             hash.update(str(element).encode())
         return hash.hexdigest()
-    def create_index(self,attribute_name):
+    def create_index(self, attribute_name):
         try:
+            print("-------------->", attribute_name)
+            print([column.attribute_name for column in self.columns])
             record_pos = [column.attribute_name for column in self.columns].index(attribute_name)
             self.indices.append(Index(attribute_name, record_pos, self.data))
             #print(self.indices)
@@ -565,9 +567,8 @@ class Table:
                 
                 
                 names.append(name[1] + "(" + name[0] + ")")
-            print(names)
-            
-            pt.fied_names = names
+
+            pt.field_names = names
 
             
         
@@ -587,23 +588,23 @@ class Table:
             pt = PrettyTable()
             
             
-            #Check the column mapping 
-            if columns==['*']:
-                idx=range(len(self.columns))
-                pt.field_names = [col.attribute_name for col in self.columns]
-            else:   
-                idx=[]
-                pt.field_names = columns
-                for idex, col in enumerate(self.columns):
-                    for colnm in columns:
-                        if colnm in col.attribute_name:
-                            idx.append(idex)
+
+            idx=[]
+            pt.field_names = columns
+            for idex, col in enumerate(self.columns):
+                for colnm in columns:
+                    if colnm == col.attribute_name:
+                        print(">>>", colnm, col.attribute_name)
+                        print("from here")
+                        idx.append(idex)
                                        
-            
-            
+            print("--->", columns)
+            print("--->", idx)
 
             for x in self._select_filter(where, order_by, direction):
                 #print(x)
+
+                print([x[i] for i in idx])
                 pt.add_row([x[i] for i in idx])
                 
             print(pt)
@@ -696,9 +697,19 @@ class Table:
                                     yield self.data[x]
                     except:
                         pass
+                elif operator == "<>":
+                    print("from here")
+                    try:
+                        for key in self.indices[indices_index].data:
+                            if key != condition:
+                                for x in self.indices[indices_index].data[key]:
+                                    print(self.data[x])
+                                    yield self.data[x]
+                    except:
+                        pass
                 return
         elif where is None:
-            for x in self._select_sort(order_by):
+            for x in self._select_sort(order_by, direction=direction):
                 yield x
         else:
             if len(where) > 1:
@@ -719,11 +730,19 @@ class Table:
             newIndex = self._create_index_from_generator(self._select_sort(order_by[1:], direction), order_by[0])
             keys = list(newIndex.keys())
 
-    
+            data_type = [x.data_type for x in self.columns if x.attribute_name == order_by[0]][0]
+
+            if data_type == "int":
+                data_type = int
+            elif data_type == "float":
+                data_type = float
+            elif data_type == "varchar":
+                data_type = str
+
             if direction == "asc":
-                keys.sort(key = int)
+                keys.sort(key = data_type)
             elif direction == "desc":
-                keys.sort(reverse=True)
+                keys.sort(key = data_type, reverse=True)
 
             for key in keys:
                 for record in newIndex[key]:
@@ -735,17 +754,27 @@ class Table:
 
             # if the index does not exit, create it
             if column not in [y.attribute_name for y in self.indices]:
+                print(column)
                 self.create_index(column)
 
+            print([x.attribute_name for x in self.indices].index(column))
             index_pos = [x.attribute_name for x in self.indices].index(column)
 
             keys = list((self.indices[index_pos].data.keys()))
-            
+
+            data_type = [x.data_type for x in self.columns if x.attribute_name == order_by[0]][0]
+
+            if data_type == "int":
+                data_type = int
+            elif data_type == "float":
+                data_type = float
+            elif data_type == "varchar":
+                data_type = str
 
             if direction == "asc":
-                keys.sort(key = int)
+                keys.sort(key = data_type)
             elif direction == "desc":
-                keys.sort(key = int,reverse=True)
+                keys.sort(key = data_type, reverse=True)
 
             for key in keys:
                 for record in self.indices[index_pos].data[key]:
