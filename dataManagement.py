@@ -124,7 +124,7 @@ class Table:
                 left_table_join_column = x
 
         for x in right_table.columns:
-            if x.attribute_name == leftColumnOfJoin:
+            if x.attribute_name == rightColumnOfJoin:
                 right_table_join_column = x
 
         if left_table_join_column is None:
@@ -132,7 +132,9 @@ class Table:
         if right_table_join_column is None:
             raise Exception("Error, cannot join on non-existent right table column. Check column name.")
 
-        if left_table_join_column.data_type is not right_table_join_column.data_type:
+        # print("--------------->>>>>>>>>>", left_table_join_column.data_type, right_table_join_column.data_type)
+
+        if left_table_join_column.data_type != right_table_join_column.data_type:
             raise Exception("Error, cannot join columns of different type.")
 
         # Determine smaller and larger table
@@ -176,13 +178,19 @@ class Table:
         smaller_table_column_index = [column.attribute_name for column in smaller_table.columns].index(smaller_column_of_join)
         larger_table_column_index = [column.attribute_name for column in larger_table.columns].index(larger_column_of_join)
 
+        print("smaller_table_column_index", smaller_table_column_index)
+        print("larger_table_column_index", larger_table_column_index)
+
+
         # get position of joining column index in larger table
         larger_table_index_position = [index.attribute_name for index in larger_table.indices].index(larger_column_of_join)
 
         # load the table with the joined records
-        for record in smaller_table._select():
+        for record in smaller_table._select_filter():
             # gather the records in the larger table that match, via indexing
-            other_record_list_id = larger_table.indices[larger_table_index_position].data[record[smaller_table_column_index]]
+            print("record[smaller_table_column_index]", record[smaller_table_column_index])
+
+            other_record_list_id = larger_table.indices[larger_table_index_position].data[str(record[smaller_table_column_index])]
             other_records_list_tuples = []
             for id in other_record_list_id:
                 other_records_list_tuples.append(larger_table.data[id])
@@ -192,11 +200,12 @@ class Table:
                 joined_record = list(record)
 
                 for i in range(0, len(other_record)):
-                    if i is not larger_table_column_index:
-                        joined_record.append(other_record[i])
+                    # if i is not larger_table_column_index:
+                    joined_record.append(other_record[i])
 
                 joined_record = tuple(joined_record)
-
+                print("from this spot over here -------", joined_record)
+                print("from this spot over here ------", joined_table.columns)
                 joined_table.add_record(joined_record)
 
 
@@ -336,8 +345,6 @@ class Table:
         return hash.hexdigest()
     def create_index(self, attribute_name):
         try:
-            print("-------------->", attribute_name)
-            print([column.attribute_name for column in self.columns])
             record_pos = [column.attribute_name for column in self.columns].index(attribute_name)
             self.indices.append(Index(attribute_name, record_pos, self.data))
             #print(self.indices)
@@ -461,25 +468,37 @@ class Table:
 
     def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="asc"):
 
+        print(">>>>>>>>>", group_by)
   
         if aggregates is not None:
+            group_by_columns = {}
 
             order_by_cols = []
             for ag in aggregates:
                 # print(ag[0])
                 order_by_cols.append(ag[0])
-
+            print(">>>>>>>>------->>>>>>>", order_by_cols)
             # print(order_by_cols)
             # order_by = order_by_cols
 
             toPrint = []
             column_indices = []
             # get column indices
+
+            columns = []
+            for agre in aggregates:
+                columns.append(agre[0])
+
+            print(">>>>>>>>>>>!", columns)
+
             for column in columns:
              
                 column_indices.append([x.attribute_name for x in self.columns].index(column))
                 
-      
+            for index in group_by:
+                group_by_columns[index] = []
+
+
             # get mapping from index to column
             index_to_columns = {}
             column_to_index = {}
@@ -490,7 +509,6 @@ class Table:
                 column_to_index[columns[i]] = index
                 i += 1
             
-   
 
             # get mapping from index to aggregate function
             index_to_aggregate_function = {}
@@ -514,42 +532,72 @@ class Table:
 
                 # set up mapping from group by indices to state values
                 group_by_index_mapping = {}
+                prior_group_by_index_mapping = {}
                 for index in group_by_column_indices:
                     group_by_index_mapping[index] = 0
                  
 
                 hashPrior = self.tuple_hasher(group_by_index_mapping.values())
                 hashCurrent = self.tuple_hasher(group_by_index_mapping.values())
+                vals = []
+                first = 1;
+                for record in self._select_filter(where, group_by, direction):
+                    
+                    print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk", record)
 
-                for record in self._select_filter(where, order_by_cols, direction):
-                    
-                    
-                    for index in index_to_var:
-                        index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
 
                     for key in group_by_index_mapping:
                         group_by_index_mapping[key] = record[key]
-
+                    print("----->", group_by_index_mapping)
                     hashPrior = hashCurrent
                     hashCurrent = self.tuple_hasher(group_by_index_mapping.values())
 
+                    for element in list(group_by_index_mapping.values()):
+                        vals.append(element)
+                    print(hashPrior, hashCurrent)
                     if hashPrior != hashCurrent:
+                        print("after the hash")
                         change = True
-
+                    if first is 1:
+                        first -= 1
+                        change = False
                     if group_by is None:
                         change = False
 
+                    print(">..>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", group_by_columns)
+
                     if change is True:
+                        print("is true from here")
+                        x = 0
+
+
+                        for key in group_by_columns:
+                            print("oooooooooo", vals)
+                            group_by_columns[key].append(vals[x])
+                            x += 1
+                        vals = []
                         list_of_results.append(index_to_var)
                         index_to_var = {}
                         for index in index_to_aggregate_function:
                             index_to_var[index] = "a"
                         change = False
+
+                    for index in index_to_var:
+                        index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
+
+                x = 0
+                for key in group_by_columns:
+                    print("oooooooooo", vals)
+                    group_by_columns[key].append(vals[x])
+                    x += 1
+                list_of_results.append(index_to_var)
             else:
                 for record in self._select_filter(where, order_by, direction):
                     for index in index_to_var:
                         index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
                 list_of_results.append(index_to_var)
+
+
             # # get mapping from index to integer
                 # index_to_var = {}
                 # for index in index_to_aggregate_function:
@@ -559,10 +607,19 @@ class Table:
                 # for record in self._select_filter(where, order_by, direction):
                 #     for index in index_to_var:
                 #         index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
-                
+
+
+            print(">>>>>>", list_of_results)
+
+            print("bbbbbbbbbbbbbbb", group_by_columns)
+
+            for x in group_by_columns:
+                print(group_by_columns[x])
             pt = PrettyTable()
             
             names = []
+            for key in group_by_columns:
+                names.append(key)
             for name in aggregates:
                 
                 
@@ -572,15 +629,23 @@ class Table:
 
             
         
-            values = []
+            i = 0
             for result in list_of_results:
-                for i, (k,v) in enumerate(result.items()):
-                    
-                    values.append(v)
-                    
+                values = []
+                for key in group_by_columns:
+                    values.append(group_by_columns[key][i])
+                i += 1
+                for res in result:
+                    values.append(result[res])
+                pt.add_row(values)
+                    # values = []
+                    # for key in res:
+                    #     print("from here this is v:-------", v)
+                    #     values.append(res[key])
+                    # pt.add_row(values)
 
             
-            pt.add_row(values)
+            # pt.add_row(values)
             
             print(pt)
             
@@ -594,17 +659,11 @@ class Table:
             for idex, col in enumerate(self.columns):
                 for colnm in columns:
                     if colnm == col.attribute_name:
-                        print(">>>", colnm, col.attribute_name)
-                        print("from here")
                         idx.append(idex)
-                                       
-            print("--->", columns)
-            print("--->", idx)
 
             for x in self._select_filter(where, order_by, direction):
                 #print(x)
 
-                print([x[i] for i in idx])
                 pt.add_row([x[i] for i in idx])
                 
             print(pt)

@@ -312,19 +312,28 @@ class SQLParser:
             table_name = table_name[:position].strip()
 
 
-        # position = table_name.find("group by")
-        # if position == -1:
-        #     position_upper = table_name.find("GROUP BY")
-        #     if position_upper == -1:
-        #         pass
-        #     else:
-        #         table_name = table_name[:position_upper].strip()
-        #
-        # else:
-        #     table_name = table_name[:position].strip()
-        # 
-            
-            
+        position = table_name.find("group by")
+        if position == -1:
+            position_upper = table_name.find("GROUP BY")
+            if position_upper == -1:
+                pass
+            else:
+                table_name = table_name[:position_upper].strip()
+
+        else:
+            table_name = table_name[:position].strip()
+
+
+        position = table_name.find("join")
+        if position == -1:
+            position_upper = table_name.find("JOIN")
+            if position_upper == -1:
+                pass
+            else:
+                table_name = table_name[:position_upper].strip()
+
+        else:
+            table_name = table_name[:position].strip()
             
 
         #Remove extra space 
@@ -633,12 +642,13 @@ class SQLParser:
 
 
         
-        
-        for element in columns:
-            if element == "*":
-                columns = [x.attribute_name for x in tables[table_name].columns]
-
-        
+        # print("___________________________>>>>", table_name)
+        if join == []:
+            for element in columns:
+                if element == "*":
+                    columns = [x.attribute_name for x in tables[table_name].columns]
+        # print("BbBBBBBBBBBBBBBBBBBBBBBB", columns)
+        #
         if join==[]: # no join
             join=None
             if order_by==[]:
@@ -657,15 +667,16 @@ class SQLParser:
                     aggregated_columns[i]=(tup[1],tup[0])
             if group_by==[]:
                 group_by=None
-            else:
-                group_by=[group_by[0][0]+'.'+group_by[0][1]]
+            # else:
+            #     group_by=[group_by[0][0]+'.'+group_by[0][1]]
             if where==[]:
                 where=None
                 
                        
         else: # join
-            for i,tup in enumerate(columns):
-                columns[i]=tup[0]+'.'+tup[1]
+            if columns != ["*"]:
+                for i,tup in enumerate(columns):
+                    columns[i]=tup[0]+'.'+tup[1]
             # for i,tup in enumerate(join):
             #     join[i]=(tup[0]+'.'+tup[1])
             if order_by==[]:
@@ -698,7 +709,8 @@ class SQLParser:
             
         
 
-        # process join
+        # process select
+        # regular
         if join == None:
         
             
@@ -711,14 +723,21 @@ class SQLParser:
             tables[table_name].select(columns, aggregated_columns, group_by,where, order_by,direct)
                 
 
-        
+        # join version
         else:
             print (join)
             
             print(join[0][0])
             print(join[1][1])
-            Table.create_from_join(tables[join[1][0]],tables[join[1][0]],join[0][1], join[1][1]).select(columns, aggregated_columns, group_by,where, order_by,direct)
-            
+            temporaryTable = Table.create_from_join(tables[join[0][0]], tables[join[1][0]], join[0][1], join[1][1])
+
+            for element in columns:
+                if element == "*":
+                    columns = [x.attribute_name for x in temporaryTable.columns]
+
+            temporaryTable.select(columns, aggregated_columns, group_by, where, order_by, direct)
+            temporaryTable.drop_table()
+
             
             
         
