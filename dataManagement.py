@@ -132,7 +132,6 @@ class Table:
         if right_table_join_column is None:
             raise Exception("Error, cannot join on non-existent right table column. Check column name.")
 
-        # print("--------------->>>>>>>>>>", left_table_join_column.data_type, right_table_join_column.data_type)
 
         if left_table_join_column.data_type != right_table_join_column.data_type:
             raise Exception("Error, cannot join columns of different type.")
@@ -142,8 +141,6 @@ class Table:
         smaller_column_of_join = leftColumnOfJoin
         larger_table = right_table
         larger_column_of_join = rightColumnOfJoin
-        
-        print(larger_column_of_join)
 
         if left_table.size > right_table.size:
             smaller_table = right_table
@@ -164,8 +161,6 @@ class Table:
             if key is not larger_column_of_join:
                 mapping[larger_table.table_name + "." + key] = larger_table.column_mapping[key]
 
-        # print("MAPPING", mapping)
-
         # modifying primary keys in primary keys list to add table_name of smaller table
         joined_primary_keys = []
         for primary in smaller_table.primary_key:
@@ -178,18 +173,12 @@ class Table:
         smaller_table_column_index = [column.attribute_name for column in smaller_table.columns].index(smaller_column_of_join)
         larger_table_column_index = [column.attribute_name for column in larger_table.columns].index(larger_column_of_join)
 
-        print("smaller_table_column_index", smaller_table_column_index)
-        print("larger_table_column_index", larger_table_column_index)
-
-
         # get position of joining column index in larger table
         larger_table_index_position = [index.attribute_name for index in larger_table.indices].index(larger_column_of_join)
 
         # load the table with the joined records
         for record in smaller_table._select_filter():
             # gather the records in the larger table that match, via indexing
-            print("record[smaller_table_column_index]", record[smaller_table_column_index])
-
             other_record_list_id = larger_table.indices[larger_table_index_position].data[str(record[smaller_table_column_index])]
             other_records_list_tuples = []
             for id in other_record_list_id:
@@ -204,17 +193,10 @@ class Table:
                     joined_record.append(other_record[i])
 
                 joined_record = tuple(joined_record)
-                print("from this spot over here -------", joined_record)
-                print("from this spot over here ------", joined_table.columns)
                 joined_table.add_record(joined_record)
 
 
         return joined_table
-
-
-        # joinedTable = cls(table_name, column_mapping)
-        #
-        # return joinedTable
 
     def show_columns(self):
 
@@ -229,6 +211,9 @@ class Table:
         os.remove(self.table_name + "_primary_key.db")
 
     def add_record(self, record):
+
+        # print("ADDDDDDDD RECORD AT THIS POINT")
+
         # --- check if record is legal
         # --------- check if lengths match
         if len(record) != len(self.columns):
@@ -259,7 +244,29 @@ class Table:
 
         # add the record to the hash map self.data
         self.data[hash] = record
-        # print(hash)
+
+        # #--------------------------------------------------
+        # # --- index the record's attributes for each column that currently has an index in existence
+        # print("from here")
+        # # obtain list of column names
+        # col_names = [x.attribute_name for x in self.columns]
+        # print("from here")
+        # # map locs of indices to indices
+        # mapper = {}
+        # print("from here")
+        #
+        # for ind in range(0, len(self.indices)):
+        #     mapper[ind] = col_names.index(self.indices[ind].attribute_name)
+        # # print("from here")
+        # # print(mapper)
+        # # print(self.indices[0].data["2"])
+        # for key in mapper:
+        #     hashes = self.indices[key].data[str(record[mapper[key]])]
+        #     print(hashes)
+        #     hashes.append(hash)
+        #     self.indices[key].data[str(record[mapper[key]])] = hashes
+        # #--------------------------------------------------
+
 
         self.size += 1
 
@@ -275,9 +282,7 @@ class Table:
             record_list.append(record[index])
         hash2 = self.tuple_hasher(tuple(record_list))
 
-        # print(hash)
         if hash in self.data:
-            # print("here")
             del self.data[hash]
             del self.primary_key_hash_map[hash2]
         else:
@@ -310,10 +315,7 @@ class Table:
                 raise Exception("Cannot delete non existent record.")
     
             self.size -= 1
-        
-        
-        
-        
+
     def update_record(self, columns_to_be_updated, values_to_be_updated, where=None):
 
         # column_names = [x.attribute_name for x in self.columns]
@@ -323,18 +325,16 @@ class Table:
            
             indices.append([x.attribute_name for x in self.columns].index(column))
         for record in self._select_filter(where):
-            
 
             record = list(record)
-            self.delete_record(where)
+            self.remove_record(record)
 
             # modify the record
             i = 0
             for index in indices:
                 record[index] = values_to_be_updated[i]
                 i += 1
-            
-            
+
             # insert
             self.add_record(tuple(record))
 
@@ -347,7 +347,6 @@ class Table:
         try:
             record_pos = [column.attribute_name for column in self.columns].index(attribute_name)
             self.indices.append(Index(attribute_name, record_pos, self.data))
-            #print(self.indices)
         except:
             print("ERROR: Attribute does not exist. Cannot create index.")
 
@@ -356,83 +355,10 @@ class Table:
         try:
             for i,index in enumerate(self.indices):
                 if (index.attribute_name == attribute_name):
-                    idx=i;
+                    idx = i
             del self.indices[idx]
-            #print('Deleted!')
-            #print(index)
-            #print(self.indices)
         except:
             raise Exception("Cannot drop non existent index.")
-
-    # def select(self, columns, where=None, order_by=None, group_by=None):
-    #     indices = []
-    #
-    #     for column in columns:
-    #         indices.append([x.attribute_name for x in self.columns].index(column))
-    #
-    #     '''
-    #     *********************
-    #     *   Attribute_name
-    #     *
-    #     '''
-    #
-    #     for key in self.data:
-    #         # check where condition
-    #         if
-    #             toPrint = []
-    #         for index in indices:
-    #             toPrint.append(self.data[key][index])
-    #         yield toPrint
-
-
-    # def _select(self, where=None, order_by=None):
-    #
-    #     # if there are no such conditions, simply yield one record at a time
-    #     if where is None and order_by is None:
-    #         for key in self.data:
-    #             yield self.data[key]
-    #         return
-    #     # else there is a condition. An index is needed. Determine if all the indices needed are present
-    #     # check indices for where clause:
-    #     for clause in where:
-    #         if clause["column"] not in [y.attribute_name for y in self.indices]:
-    #             self.create_index(clause["column"])
-    #     # check indices for order_by clause:
-    #
-    #
-    #     if order_by is None:
-    #         first = 0
-    #         for clause in where:
-    #             if first == 0:
-    #                 operator = clause["symbol"]
-    #                 column = clause["column"]
-    #                 condition = str(clause["condition"])
-    #
-    #                 indices_index = [z.attribute_name for z in self.indices].index(column)
-    #                 if operator == "==":
-    #                     try:
-    #                         for key in self.indices[indices_index].data:
-    #                             if key == condition:
-    #                                 for x in self.indices[indices_index].data[key]:
-    #                                     yield self.data[x]
-    #                     except:
-    #                         pass
-    #                 elif operator == "<":
-    #                     try:
-    #                         for key in self.indices[indices_index].data:
-    #                             if key < condition:
-    #                                 for x in self.indices[indices_index].data[key]:
-    #                                     yield self.data[x]
-    #                     except:
-    #                         pass
-    #                 elif operator == ">":
-    #                     try:
-    #                         for key in self.indices[indices_index].data:
-    #                             if key > condition:
-    #                                 for x in self.indices[indices_index].data[key]:
-    #                                     yield self.data[x]
-    #                     except:
-    #                         pass
 
     def aggregation(self, operation_type, record_data, current):
         if operation_type == "sum":
@@ -465,21 +391,14 @@ class Table:
             else:
                 return current
 
-
     def select(self, columns, aggregates=None, group_by=None, where=None, order_by=None, direction="asc"):
 
-        print(">>>>>>>>>", group_by)
-  
         if aggregates is not None:
             group_by_columns = {}
 
             order_by_cols = []
             for ag in aggregates:
-                # print(ag[0])
                 order_by_cols.append(ag[0])
-            print(">>>>>>>>------->>>>>>>", order_by_cols)
-            # print(order_by_cols)
-            # order_by = order_by_cols
 
             toPrint = []
             column_indices = []
@@ -488,8 +407,6 @@ class Table:
             columns = []
             for agre in aggregates:
                 columns.append(agre[0])
-
-            print(">>>>>>>>>>>!", columns)
 
             for column in columns:
              
@@ -542,21 +459,15 @@ class Table:
                 vals = []
                 first = 1;
                 for record in self._select_filter(where, group_by, direction):
-                    
-                    print("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk", record)
-
 
                     for key in group_by_index_mapping:
                         group_by_index_mapping[key] = record[key]
-                    print("----->", group_by_index_mapping)
                     hashPrior = hashCurrent
                     hashCurrent = self.tuple_hasher(group_by_index_mapping.values())
 
                     for element in list(group_by_index_mapping.values()):
                         vals.append(element)
-                    print(hashPrior, hashCurrent)
                     if hashPrior != hashCurrent:
-                        print("after the hash")
                         change = True
                     if first is 1:
                         first -= 1
@@ -564,15 +475,12 @@ class Table:
                     if group_by is None:
                         change = False
 
-                    print(">..>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", group_by_columns)
 
                     if change is True:
-                        print("is true from here")
                         x = 0
 
 
                         for key in group_by_columns:
-                            print("oooooooooo", vals)
                             group_by_columns[key].append(vals[x])
                             x += 1
                         vals = []
@@ -587,7 +495,6 @@ class Table:
 
                 x = 0
                 for key in group_by_columns:
-                    print("oooooooooo", vals)
                     group_by_columns[key].append(vals[x])
                     x += 1
                 list_of_results.append(index_to_var)
@@ -597,24 +504,6 @@ class Table:
                         index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
                 list_of_results.append(index_to_var)
 
-
-            # # get mapping from index to integer
-                # index_to_var = {}
-                # for index in index_to_aggregate_function:
-                #     index_to_var[index] = "a"
-                #
-                #
-                # for record in self._select_filter(where, order_by, direction):
-                #     for index in index_to_var:
-                #         index_to_var[index] = self.aggregation(index_to_aggregate_function[index], record[index], index_to_var[index])
-
-
-            print(">>>>>>", list_of_results)
-
-            print("bbbbbbbbbbbbbbb", group_by_columns)
-
-            for x in group_by_columns:
-                print(group_by_columns[x])
             pt = PrettyTable()
             
             names = []
@@ -627,8 +516,6 @@ class Table:
 
             pt.field_names = names
 
-            
-        
             i = 0
             for result in list_of_results:
                 values = []
@@ -638,21 +525,11 @@ class Table:
                 for res in result:
                     values.append(result[res])
                 pt.add_row(values)
-                    # values = []
-                    # for key in res:
-                    #     print("from here this is v:-------", v)
-                    #     values.append(res[key])
-                    # pt.add_row(values)
 
-            
-            # pt.add_row(values)
-            
             print(pt)
             
         else:
             pt = PrettyTable()
-            
-            
 
             idx=[]
             pt.field_names = columns
@@ -662,8 +539,6 @@ class Table:
                         idx.append(idex)
 
             for x in self._select_filter(where, order_by, direction):
-                #print(x)
-
                 pt.add_row([x[i] for i in idx])
                 
             print(pt)
@@ -713,16 +588,13 @@ class Table:
             # it does not make sense to make this unique combination of wheres into an index
             if len(where) > 1:
                 for x in self._select_filter(where[1:]):
-                    # print("--->", where[0])
                     if self._filter(x, where[0]):
                         yield x
                 return
             else:
-                # print(where)
                 operator = where[0]["symbol"]
                 column = where[0]["column"]
                 condition = str(where[0]["condition"])
-                # print(column)
 
                 # if the index does not exit, create it
                 if column not in [y.attribute_name for y in self.indices]:
@@ -739,11 +611,8 @@ class Table:
                         pass
                 elif operator == "<":
                     try:
-                        # print("---------->", len(self.indices[indices_index].data))
                         for key in self.indices[indices_index].data:
-                            # print(int(key), int(condition), int(key) < int(condition))
                             if int(key) < int(condition):
-                                # print("here", key)
                                 for x in self.indices[indices_index].data[key]:
                                     yield self.data[x]
                     except:
@@ -757,12 +626,10 @@ class Table:
                     except:
                         pass
                 elif operator == "<>":
-                    print("from here")
                     try:
                         for key in self.indices[indices_index].data:
                             if key != condition:
                                 for x in self.indices[indices_index].data[key]:
-                                    print(self.data[x])
                                     yield self.data[x]
                     except:
                         pass
@@ -805,7 +672,6 @@ class Table:
 
             for key in keys:
                 for record in newIndex[key]:
-                    # print(">>>>>>>>>", key, newIndex[key], record)
                     yield self.data[record]
         else:
 
@@ -813,10 +679,8 @@ class Table:
 
             # if the index does not exit, create it
             if column not in [y.attribute_name for y in self.indices]:
-                print(column)
                 self.create_index(column)
 
-            print([x.attribute_name for x in self.indices].index(column))
             index_pos = [x.attribute_name for x in self.indices].index(column)
 
             keys = list((self.indices[index_pos].data.keys()))
@@ -844,16 +708,11 @@ class Table:
 
         index = {}
 
-        for x in [x.attribute_name for x in self.columns]:
-            print(x)
-
         column_index = [x.attribute_name for x in self.columns].index(column)
 
         try:
             for record in records:
-                # print("heree", record[column_index], index.keys())
                 if str(record[column_index]) in index:
-                    # print("heree", record[column_index])
                     index[str(record[column_index])].append(self.tuple_hasher(record))
                 else:
                     index[str(record[column_index])] = [self.tuple_hasher(record)]
@@ -862,14 +721,6 @@ class Table:
             pass
 
         return index
-        # try:
-        #     for key in data:
-        #         if str(data[key][record_pos]) in self.data:
-        #             self.data[str(data[key][record_pos])].append(key)
-        #         else:
-        #             self.data[str(data[key][record_pos])] = [key]
-        # except:
-        #     pass
 
 class Column:
 
