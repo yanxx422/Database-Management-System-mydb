@@ -82,4 +82,4 @@ Index objects contain, aside from basic information about the attribute the inde
 
 ## Credits
 
-This is a collaborative project with me and my classmate at Georgetown U database class, Rashid Haddad. We worked hard and learned a lot!  
+This is a collaborative project of me and my classmate at Georgetown U database class, Rashid Haddad. We worked hard and learned a lot!  
